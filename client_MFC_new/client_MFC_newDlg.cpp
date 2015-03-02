@@ -33,7 +33,7 @@
 using std::vector;
 vector< int > vec;     // vector< int > vcc(20)
 int co=0,csPro=200,flag=0,readingNo=0,srX=0,srY=0;
-float ccx[1024],ccy[1024],lenX1,lenY1;
+float ccx[1024],ccy[1024],ssx[1024],ssy[1024],lenX1,lenY1;
 float X1,X2,Y1,Y2,mX1,mX2,mY1,mY2,dX,dY,picX,picY,mX,mY,lenX,lenY,delX,delY;
 float mlenX,mlenY,mlenX1,mlenY1,mdelX,mdelY;
 bool safedrive=0;
@@ -223,7 +223,7 @@ HCURSOR Cclient_MFC_newDlg::OnQueryDragIcon()
 void Cclient_MFC_newDlg::OnBnClickedButton1()//client连接server
 {
 	AfxBeginThread(CaptureThread, this);	// start capture thread
-	//AfxBeginThread(CaptureThread_1, this);
+	AfxBeginThread(CaptureThread_1, this);
 	SetTimer(1,TM,0);
 }
 
@@ -464,7 +464,6 @@ using namespace std;
 ofstream write;
 int cc=0,dd=1;
 char sName[50];
-float ssx[1024],ssy[1024];
 ArMap armap;
 
 readingNo = packet->bufToByte2(); // ====================================================>> Number of reading
@@ -571,14 +570,25 @@ clientConfig.unlock();
 //================================================== ============ =======================================//
 //================================================== ============ ==================================================//
 
-/*UINT Cclient_MFC_newDlg::CaptureThread_1(LPVOID Param_1)
+UINT Cclient_MFC_newDlg::CaptureThread_1(LPVOID Param_1)
 {
 	Cclient_MFC_newDlg *dlg_1;
 	// Get pointer to parent dialog
 	dlg_1=(Cclient_MFC_newDlg*)Param_1;
 	dlg_1->IsThreadRunning=true;
+
+	ArClientBase client;
+	ArServerBase server;
 	
-}*/
+	here:
+	switch(flag)
+		{
+		//case 12:client.requestOnce("tourGoals");ArUtil::sleep(15000);flag=0;break;
+		case 13:server.stopAll();ArUtil::sleep(10000);flag=99;break;
+		}
+	goto here;
+	return flag;
+}
 
 UINT Cclient_MFC_newDlg::CaptureThread(LPVOID lParam)
 {
@@ -607,7 +617,6 @@ UINT Cclient_MFC_newDlg::CaptureThread(LPVOID lParam)
 	* See the InputHandler and OutputHandler classes above for
 	* examples of making requests and reading/writing the data in packets.
 	*/
-	ArRobot robot;
 	ArClientBase client;
 	
 	/* Aria components use this to get options off the command line: */
@@ -636,13 +645,14 @@ UINT Cclient_MFC_newDlg::CaptureThread(LPVOID lParam)
 		else
 		Warning = "Could not connect to server, exiting ";
 		exit(1);
-	} 
+	}
+
+	//client.runAsync();
 
     ArKeyHandler keyHandler;
 	Aria::setKeyHandler(&keyHandler);
 	ArGlobalFunctor escapeCB(&escape);
 	keyHandler.addKeyHandler(ArKeyHandler::ESCAPE, &escapeCB);
-	client.runAsync();
 
 	InputHandler inputHandler(&client);
 	inputHandler.safeDrive();
@@ -661,13 +671,11 @@ ArMap bArmap("/usr/local/Arnl/examples/");
 ArServerHandlerMap hMap(&bServer, &bArmap, ArServerHandlerMap::BOTH);
 hMap.loadMap("ASD.map");  // /usr/local/Arnl/examples/columbia.map
 
-client.runAsync();
 //hMap.useMap(&bArmap,false);
 //client.request("mapUpdated",2000);
 //client.request("goalsUpdated",2000);*/
 //=============================================================================================================//
-ArNetPacket pkt;
-ArNetPacket requestPacket;
+ArNetPacket pkt, requestPacket;
 
 ArGlobalFunctor1<ArNetPacket *> HandlerCB(&Handler);
 client.addHandler("physicalInfo", &HandlerCB);
@@ -686,16 +694,13 @@ client.addHandler("getMap", &mapInfoCB);
 
 /*ArGlobalFunctor1<ArNetPacket *> getConfigCB(&getConfig);
 client.addHandler("getConfigBySections", &getConfigCB);*/
+client.runAsync();
 
-//client.runAsync();
-client.lock();
 client.requestOnce("physicalInfo");
 client.requestOnce("getSensorList");
 
-client.lock();
 requestPacket.strToBuf("sim_S3Series_1");
 client.request("getSensorCurrent",TM-2,&requestPacket); 
-client.unlock();
 
 //client.requestOnce("getMapName");
 if(flag==16) client.requestOnce("getMap");
@@ -714,39 +719,26 @@ ArUtil::sleep(30000);
 if(flag==13)goto control;
 }*/
 //client.requestOnce("getConfigBySections");*/
-
 //if(client.dataExists("localizeToPose"))  // localization path request
-switch(flag)
-{
-case 11:client.requestOnce("localizeToPose");break;  // for MobileSim, set robot to a given pose
-}
-client.unlock();
 
 //control:
 
 //============================================ =================== ========================================//
 //============================================ =================== ===============================================// 
-	ArServerBase server;
+//client.lock();
 	while (client.getRunningWithLock())
 	{ 
 		double x=0,y=0,z=0;
-		int delayTime=0;
 		switch(flag)
-		{
+		{		
+			case 1:if(WM_LBUTTONDOWN) inputHandler.up();ArUtil::sleep(100);break;
+			case 2:if(WM_LBUTTONDOWN) inputHandler.down();ArUtil::sleep(100);break;
+			case 3:inputHandler.left();ArUtil::sleep(100);break;
+			case 4:inputHandler.right();ArUtil::sleep(100);break;
+			case 5:inputHandler.doStop();ArUtil::sleep(100);flag=0;break;
 			
-			case 1:if(WM_LBUTTONDOWN) inputHandler.up();break;
-			case 2:if(WM_LBUTTONDOWN) inputHandler.down();break;
-			case 3:inputHandler.left();break;
-			case 4:inputHandler.right();break;
-			case 5:if(WM_LBUTTONDBLCLK) server.stopRunning();inputHandler.doStop();flag=0;break;
-			
-			case 12:if(WM_LBUTTONDOWN) delayTime=30000;
-									   client.requestOnce("tourGoals");
-									   flag=0;
-									   ArUtil::sleep(delayTime);
-									   break;
-			
-			
+			case 11:client.requestOnce("localizeToPose");ArUtil::sleep(1000);flag=0;break;  // for MobileSim, set robot to a given pose
+			case 12:client.requestOnce("tourGoals");ArUtil::sleep(20000);flag=0;break;
 		}
 		if (safedrive)//安全模式
 			inputHandler.unsafeDrive();
@@ -763,9 +755,9 @@ client.unlock();
 		tempA=outputHandler.myTh;
 		tempB=outputHandler.myVoltage;
 		tempV=outputHandler.myVel;
-
 		//if(flag==14) goto nav;
 	}	
+//client.unlock();
 }
 
 void Cclient_MFC_newDlg::OnBnClickedButton8()//断开连接

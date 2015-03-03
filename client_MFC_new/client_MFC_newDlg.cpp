@@ -32,8 +32,8 @@
 //using namespace std;
 using std::vector;
 vector< int > vec;     // vector< int > vcc(20)
-int co=0,csPro=200,flag=0,readingNo=0,srX=0,srY=0;
-float ccx[1024],ccy[1024],ssx[1024],ssy[1024],lenX1,lenY1;
+int co=0,csPro=200,flag=0,readingNo=0,srX=0,srY=0,f1=0,f2=1;
+float ccx[1024],ccy[1024],ssx[1024],ssy[1024],zzx[10240],zzy[10240],lenX1,lenY1;
 float X1,X2,Y1,Y2,mX1,mX2,mY1,mY2,dX,dY,picX,picY,mX,mY,lenX,lenY,delX,delY;
 float mlenX,mlenY,mlenX1,mlenY1,mdelX,mdelY;
 bool safedrive=0;
@@ -335,6 +335,8 @@ void Cclient_MFC_newDlg::DrawWave(CDC *pDC, CRect &rectPicture)
 //void Cclient_MFC_newDlg::DrawMAP(CDC *mDC, CRect &rectPicture)
 void CMapDlg::sMap(CDC *mDC, CRect &rectPicture)
 {
+	int a1=0,a2=2,b1=1,b2=2;
+
 	CPen newPen;       // 用于创建新画笔   
     CPen *pOldPen;     // 用于存放旧画笔   
     CBrush newBrush;   // 用于创建新画刷   
@@ -365,13 +367,10 @@ void CMapDlg::sMap(CDC *mDC, CRect &rectPicture)
 			
 	for(vector<ArLineSegment>::iterator itM = armap.getLines()->begin();itM != armap.getLines()->end();itM++)
 	{
-		/*mX = armap.getLineMaxPose().getX() - armap.getLineMinPose().getX();
-		mY = armap.getLineMaxPose().getY() - armap.getLineMinPose().getY();
-		
-		mX1=((*itM).getX1()+mX/dPro)/csPro;
-		mY1=((*itM).getY1()+mY/dPro)/csPro;       // ======== =================== ======== //
-		mX2=((*itM).getX2()+mX/dPro)/csPro;       // ======== For a static MAP ======== //
-		mY2=((*itM).getY2()+mY/dPro)/csPro;      // ======== =================== ======== //*/
+		zzx[a1]=(*itM).getX1();
+		zzy[a1]=(*itM).getY1();      
+		zzx[b1]=(*itM).getX2();       
+		zzy[b1]=(*itM).getY2();   
 		
 		mlenX = armap.getLineMaxPose().getX() - armap.getLineMinPose().getX();
 		mlenY = armap.getLineMaxPose().getY() - armap.getLineMinPose().getY();
@@ -388,7 +387,11 @@ void CMapDlg::sMap(CDC *mDC, CRect &rectPicture)
 		mY2= (rectPicture.Height()*0.3 + ((*itM).getY2()+mlenY1)*mdelY)*mdPro;
 
 		mDC->MoveTo(mX1, mY1);
-		mDC->LineTo(mX2, mY2);   
+		mDC->LineTo(mX2, mY2);
+
+		a1=a1+a2;
+		b1=b1+b2;
+		f1=f1+f2;
 	}
     // 恢复旧画笔    
 	mDC->SelectObject(pOldPen);   
@@ -460,9 +463,10 @@ fflush(stdout);
 //============== sensor data ==============//
 void sonarData(ArNetPacket* packet)
 {
+int cc=0,dd=1; //xu[1024],yu[1024];
+
 using namespace std;
 ofstream write;
-int cc=0,dd=1;
 char sName[50];
 ArMap armap;
 
@@ -478,6 +482,8 @@ packet->bufToStr(sName, sizeof(sName)); // =====================================
 	ssx[cc] = sonarX;
 	ssy[cc] = sonarY;
 
+	/*xu[cc]=sonarX;
+	yu[cc]=sonarY;*/
 	cc = cc + dd;
 	}
 
@@ -577,16 +583,29 @@ UINT Cclient_MFC_newDlg::CaptureThread_1(LPVOID Param_1)
 	dlg_1=(Cclient_MFC_newDlg*)Param_1;
 	dlg_1->IsThreadRunning=true;
 
-	ArClientBase client;
-	ArServerBase server;
-	
-	here:
-	switch(flag)
+	using namespace std;
+	ofstream write;
+
+	ArUtil::sleep(1000);
+	write.open("ccxy.txt");
+		for(int w=0;w<500;w++)
 		{
-		//case 12:client.requestOnce("tourGoals");ArUtil::sleep(15000);flag=0;break;
-		case 13:server.stopAll();ArUtil::sleep(10000);flag=99;break;
+		write<<ccx[w]<<" "<<ccy[w];
+		write<<endl;
 		}
-	goto here;
+	write.close();
+//============= ============ =============//
+//============= ============ =============//
+	write.open("zzxy.txt");
+	for(int v=0;v<10240;v++)
+		{
+		write<<zzx[v]<<" "<<zzy[v];
+		write<<endl;
+		}
+	write.close();
+
+
+	while(1) ArUtil::sleep(100000);
 	return flag;
 }
 
@@ -706,10 +725,17 @@ client.request("getSensorCurrent",TM-2,&requestPacket);
 if(flag==16) client.requestOnce("getMap");
 
 
+goto next;
+nav:
+pkt.strToBuf("GOAL2"); // gotoGoal
+client.requestOnce("gotoGoal",&pkt);
+ArUtil::sleep(6000);
+next:
+
+
 /*pk.byte4ToBuf(0);
 pk.byte4ToBuf(0);
 pk.byte4ToBuf(0);  //gotoPose*/
-//pkt.strToBuf("GOAL2"); // gotoGoal
 //client.request("gotoGoal",10000,&pkt);
 //========================================================================//
 /*while(flag==14){
@@ -737,8 +763,10 @@ if(flag==13)goto control;
 			case 4:inputHandler.right();ArUtil::sleep(100);break;
 			case 5:inputHandler.doStop();ArUtil::sleep(100);flag=0;break;
 			
-			case 11:client.requestOnce("localizeToPose");ArUtil::sleep(1000);flag=0;break;  // for MobileSim, set robot to a given pose
-			case 12:client.requestOnce("tourGoals");ArUtil::sleep(20000);flag=0;break;
+			case 11:client.requestOnce("localizeToPose");ArUtil::sleep(500);flag=0;break;  // for MobileSim, set robot to a given pose
+			case 12:goto nav;break;//client.requestOnce("gotoGoal",&pkt);ArUtil::sleep(12000);break;
+			case 13:client.requestOnce("stop");flag=0;break;
+			case 14:client.requestOnce("wander");ArUtil::sleep(500);break;
 		}
 		if (safedrive)//安全模式
 			inputHandler.unsafeDrive();

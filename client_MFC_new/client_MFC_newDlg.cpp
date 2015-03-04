@@ -32,9 +32,9 @@
 //using namespace std;
 using std::vector;
 vector< int > vec;     // vector< int > vcc(20)
-int co=0,csPro=200,flag=0,readingNo=0,srX=0,srY=0,f1=0,f2=1;
+int co=0,csPro=200,flag=0,readingNo=0,srX=0,srY=0,f1=0,f2=1,px,py;
 float ccx[1024],ccy[1024],ssx[1024],ssy[1024],zzx[10240],zzy[10240],lenX1,lenY1;
-float X1,X2,Y1,Y2,mX1,mX2,mY1,mY2,dX,dY,picX,picY,mX,mY,lenX,lenY,delX,delY;
+float X1,X2,Y1,Y2,mX1,mX2,mY1,mY2,dX,dY,picX,picY,mX,mY,lenX,lenY,delX,delY,matchX1,matchY1,matchX2,matchY2;
 float mlenX,mlenY,mlenX1,mlenY1,mdelX,mdelY;
 bool safedrive=0;
 int sonarX=0,sonarY=0,readingNum=0;
@@ -87,6 +87,7 @@ Cclient_MFC_newDlg::Cclient_MFC_newDlg(CWnd* pParent /*=NULL*/)
 	memset(m_nzValues, 0, sizeof(int) * POINT_COUNT);//================================================================//
 	m_byX = 0;
 	m_byY = 0;
+	m_mouse = _T("");
 }
 
 void Cclient_MFC_newDlg::DoDataExchange(CDataExchange* pDX)
@@ -104,6 +105,7 @@ void Cclient_MFC_newDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MAP_DRAW, m_mapDraw);
 	DDX_Text(pDX, IDC_EDIT7, m_byX);
 	DDX_Text(pDX, IDC_EDIT8, m_byY);
+	//DDX_(pDX, IDC_WAVE_DRAW, m_mouse);
 }
 
 BEGIN_MESSAGE_MAP(Cclient_MFC_newDlg, CDialogEx)
@@ -129,6 +131,7 @@ BEGIN_MESSAGE_MAP(Cclient_MFC_newDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON15, &Cclient_MFC_newDlg::OnBnClickedButton15)
 	ON_BN_CLICKED(IDC_BUTTON16, &Cclient_MFC_newDlg::OnBnClickedButton16)
 	ON_BN_CLICKED(IDC_BUTTON17, &Cclient_MFC_newDlg::OnBnClickedButton17)
+	ON_BN_CLICKED(IDC_BUTTON18, &Cclient_MFC_newDlg::OnBnClickedButton18)
 END_MESSAGE_MAP()
 
 
@@ -309,13 +312,18 @@ void Cclient_MFC_newDlg::DrawWave(CDC *pDC, CRect &rectPicture)
 		X2= ((*it).getX2()+35000)/150;
 		Y2= ((*it).getY2()+35000)/150;*/
 
+		/*matchX1=(px/dPro-rectPicture.Width()*0.17)/delX-lenX1;
+		matchY1=(py/dPro-rectPicture.Height()*0.17)/delY-lenY1;
+		matchX2=(px/dPro-rectPicture.Width()*0.17)/delX-lenX1;
+		matchY2=(py/dPro-rectPicture.Height()*0.17)/delY-lenY1;*/
+
 //============== test only ==============//
 	/*float a,b,c,d;
 
-	a=X1;
-	b=Y1;
-	c=X2;
-	d=Y2;*/
+	a=matchX1;
+	b=matchY1;
+	c=matchX2;
+	d=matchY2;*/
 //============== ========= ==============//
 
 		if(X1<420 && X2<420 && X1>20 && X2>20 && Y1<340 && Y2<340)
@@ -329,6 +337,37 @@ void Cclient_MFC_newDlg::DrawWave(CDC *pDC, CRect &rectPicture)
     // 删除新画笔   
     newPen.DeleteObject(); 
 }  
+
+void Cclient_MFC_newDlg::rawDataTrans(CDC *rData, CRect &rectPicture)
+{
+	//=================================//
+	CPen newPen;       
+    CPen *pOldPen;      
+    
+	ArMap armap;             
+	ArLineSegment seg;
+	char* oldMapName = "AAA.map"; 
+	armap.readFile(oldMapName);
+	
+    newPen.CreatePen(PS_SOLID, 1, RGB(0,0,0));     
+    pOldPen = rData->SelectObject(&newPen); 		
+	for(vector<ArLineSegment>::iterator itRD = armap.getLines()->begin();itRD != armap.getLines()->end();itRD++)
+	{ 
+		matchX1= (rectPicture.Width()*0.17 + ((*itRD).getX1()+lenX1)*delX)*dPro;
+		matchY1= (rectPicture.Height()*0.7 + ((*itRD).getY1()+lenY1)*delY)*dPro;
+		matchX2= (rectPicture.Width()*0.17 + ((*itRD).getX2()+lenX1)*delX)*dPro;
+		matchY2= (rectPicture.Height()*0.7 + ((*itRD).getY2()+lenY1)*delY)*dPro;
+
+		if(matchX1<420 && matchX2<420 && matchX1>20 && matchX2>20 && matchY1<340 && matchY2<340 && matchY1>20 && matchY2>20)
+		{
+		rData->MoveTo(matchX1, matchY1);
+		rData->LineTo(matchX2, matchY2); 
+		}
+	}
+	rData->SelectObject(pOldPen);   
+    newPen.DeleteObject(); 
+}
+
 
 // ====================== static MAP ===================== //
 // ====================== ========== ===================== //
@@ -424,6 +463,25 @@ void CMapDlg::smMap(CDC *smDC, CRect &rectPicture)
     newPen.DeleteObject(); 
 }
 
+//================================= mouseHit =================================//
+
+void Cclient_MFC_newDlg::OnLButtonDblClk()
+{
+CRect rectP;
+CPoint pointP;
+
+//GetDlgItem(IDC_MAP_DRAW)->GetWindowRect(&rectP);
+//ScreenToClient(&pointP);
+
+GetDlgItem(IDC_MAP_DRAW)->GetClientRect(&rectP);
+GetCursorPos(&pointP);
+ScreenToClient(&pointP);
+
+px=pointP.x;
+py=pointP.y;
+
+}
+
 
 //===========================================================================================//
 //======================================================================================================//
@@ -476,7 +534,7 @@ packet->bufToStr(sName, sizeof(sName)); // =====================================
 	for(int i=0;i<readingNo*2;i++){  // ===================== LOOPS =====================>>
 	sonarX = packet->bufToByte4();  // ==================================================>> X coordinate
 	sonarY = packet->bufToByte4(); // ===================================================>> Y coordinate
-
+	
 	ccx[cc] = sonarX;
 	ccy[cc] = sonarY;	
 	ssx[cc] = sonarX;
@@ -586,26 +644,63 @@ UINT Cclient_MFC_newDlg::CaptureThread_1(LPVOID Param_1)
 	using namespace std;
 	ofstream write;
 
-	ArUtil::sleep(1000);
+	while(1)
+	{
+
 	write.open("ccxy.txt");
 		for(int w=0;w<500;w++)
 		{
-		write<<ccx[w]<<" "<<ccy[w];
+		write<<ccx[w]<<" "<<ccy[w];    // realtime data for Current Laser
 		write<<endl;
 		}
 	write.close();
-//============= ============ =============//
-//============= ============ =============//
+	ArUtil::sleep(100);
+//============= ======== =============\\	
+//============= ======== =============//
 	write.open("zzxy.txt");
 	for(int v=0;v<10240;v++)
 		{
-		write<<zzx[v]<<" "<<zzy[v];
+		write<<zzx[v]<<" "<<zzy[v];    // realtime data for a Static MAP
 		write<<endl;
 		}
 	write.close();
+	ArUtil::sleep(100);
+//============================ ============================== ===========================//
+//============================ Match methods for localization =========================//
+	/*POINT pt; 
+	if(GetCursorPos(&pt)) 
+	{
+	px=pt.x;
+	py=pt.y;
+	}*/
+	
+	
 
 
-	while(1) ArUtil::sleep(100000);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//============================ Match methods for localization =========================//
+//============================ ============================== ===========================//
+	}
+
 	return flag;
 }
 
@@ -862,8 +957,10 @@ void Cclient_MFC_newDlg::OnTimer(UINT_PTR nIDEvent)//定时器消息处理函数
 	m_Voltage = tempB;
 	m_Volocity = tempV;
 	m_warning = Warning;
-	m_byX = ccx[0];
-	m_byY = ccy[0];
+	//m_byX = ccx[0];
+	//m_byY = ccy[0];
+	m_byX = px;
+	m_byY = py;
 	UpdateData(false);
 	if(m_SafeDrive.GetCheck())
 		safedrive=true;
@@ -884,18 +981,18 @@ void Cclient_MFC_newDlg::OnTimer(UINT_PTR nIDEvent)//定时器消息处理函数
   
     // 绘制波形图   
     DrawWave(m_mapDraw.GetDC(), rectPicture);   // =============================>> Drawing current MAP dots
+	rawDataTrans(m_mapDraw.GetDC(), rectPicture);
 	DrawRobot(m_mapDraw.GetDC(), rectPicture);  // =============================>> Drawing the robot on MAP
 	/*switch(flag){
 	case 9:smMap(m_staticMapDraw.GetDC(), rectPicture); // =====================>> Drawing the static MAP	
 	break;
 	}*/
-
+	if(flag==18) OnLButtonDblClk();
 	//=============================================================//
 	//============================== =========== ===============================//
 	
 	CDialogEx::OnTimer(nIDEvent);
 }
-
 
 void Cclient_MFC_newDlg::OnStnClickedMapDraw()
 {
@@ -947,4 +1044,10 @@ void Cclient_MFC_newDlg::OnBnClickedButton17()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	flag=16; //load MAP
+}
+
+
+void Cclient_MFC_newDlg::OnBnClickedButton18()
+{
+	flag=18;  // localization
 }

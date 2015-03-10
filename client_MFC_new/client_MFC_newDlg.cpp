@@ -181,7 +181,7 @@ SetIcon(m_hIcon, FALSE); // 设置小图标
 
 // TODO: 在此添加额外的初始化代码
 SetTimer(1, TM, NULL);  // set TIMER 
-m_IP.SetAddress(192,168,1,120);
+m_IP.SetAddress(192,168,244,128);
 
 return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -294,32 +294,9 @@ ArMap armap;
 ArLineSegment seg;
 CString abc, cde;
 abc = "error for loading";
-//char* oldMapName = "laserData.map";
-//armap.readFile(oldMapName);
-/*   
-newBrush.CreateSolidBrush(RGB(255,255,255)); // 创建黑色新画刷  
-pOldBrush = pDC->SelectObject(&newBrush);    // 选择新画刷，并将旧画刷的指针保存到pOldBrush  
-pDC->Rectangle(rectPicture);  // 以黑色画刷为绘图控件填充黑色，形成黑色背景   
-pDC->SelectObject(pOldBrush); // 恢复旧画刷   
-newBrush.DeleteObject();      // 删除新画刷  */
+
 newPen.CreatePen(PS_SOLID, 2, RGB(0,249,0)); // 创建实心画笔，粗度为2，颜色为绿色    
 pOldPen = pDC->SelectObject(&newPen); // 选择新画笔，并将旧画笔的指针保存到pOldPen 
-			
-	/*for(vector<ArLineSegment>::iterator it = armap.getLines()->begin();it != armap.getLines()->end();it++)
-	{
-	currentMX=(16000+moveex*currentMkey); // laser's largest data (scan range) will not   
-	currentMY=(19000+moveey*currentMkey); // exceed 20000 for X or Y coordinates
-	X1= (currentMX+(*it).getX1())/(100+zoome*currentMkey);
-	Y1= (currentMY+(*it).getY1())/(100+zoome*currentMkey);
-	X2= (currentMX+(*it).getX2())/(100+zoome*currentMkey);
-	Y2= (currentMY+(*it).getY2())/(100+zoome*currentMkey);
-	
-		if(X1<windowMaxX && X2<windowMaxX && X1>windowMinX && X2>windowMinX && Y1<windowMaxY && Y2<windowMaxY && Y1>windowMinY && Y2>windowMinY)
-		{
-		pDC->MoveTo(X1, Y1);
-		pDC->LineTo(X2, Y2); 
-		}
-	}*/
 
 	for(int t=0;t<readingNo;t++)
 	{
@@ -341,7 +318,8 @@ pOldPen = pDC->SelectObject(&newPen); // 选择新画笔，并将旧画笔的指针保存到pOldP
 	}  
 
 pDC->SelectObject(pOldPen); // 恢复旧画笔  
-newPen.DeleteObject(); // 删除新画笔
+//newPen.DeleteObject(); // 删除新画笔
+DeleteObject(newPen.m_hObject);
 
 //--- draw LX robot on the MAP ---//
 int rX=0,rY=0;
@@ -359,14 +337,15 @@ rY= (currentMY+tempY)/(100+zoome*currentMkey);
 	pDC->LineTo(rX, rY); 
 	}  
 pDC->SelectObject(pOldPen_bot);   
-newPen_bot.DeleteObject(); 
+//newPen_bot.DeleteObject(); 
+DeleteObject(newPen.m_hObject);
 ReleaseDC(pDC);
 } 
 //---------------------//
 
 
 //-------------- draw the MAP which comes from sever --------------//
-void Cclient_MFC_newDlg::rawDataTrans(CDC *rData, CRect &rectPicture)
+void Cclient_MFC_newDlg::rawDataTrans(CDC *pDC, CRect &rectPicture)
 {
 float staticMX=0,staticMY=0;
 CPen newPen;       
@@ -379,18 +358,17 @@ char* oldMapName = "AAA.map";
 
 armap.readFile(oldMapName);
 newBrush.CreateSolidBrush(RGB(255,255,255));   
-pOldBrush = rData->SelectObject(&newBrush);   
-rData->Rectangle(rectPicture);   
-rData->SelectObject(pOldBrush);   
-newBrush.DeleteObject();  
+pOldBrush = pDC->SelectObject(&newBrush);   
+pDC->Rectangle(rectPicture);   
+pDC->SelectObject(pOldBrush);   
+//newBrush.DeleteObject();
+DeleteObject(newBrush.m_hObject);
+
 newPen.CreatePen(PS_SOLID, 1, RGB(0,0,0));     
-pOldPen = rData->SelectObject(&newPen); 
+pOldPen = pDC->SelectObject(&newPen); 
 
 	for(vector<ArLineSegment>::iterator itRD = armap.getLines()->begin();itRD != armap.getLines()->end();itRD++)
 	{ 
-	//staticMX=fabs(armap.getLineMaxPose().getX())+moveex*staticMkey;
-	//staticMY=fabs(armap.getLineMaxPose().getY())+moveey*staticMkey;
-
 	staticMX=16000+moveex*staticMkey;
 	staticMY=19000+moveey*staticMkey;
 
@@ -401,13 +379,14 @@ pOldPen = rData->SelectObject(&newPen);
 
 		if(matchX1<windowMaxX && matchX2<windowMaxX && matchX1>windowMinX && matchX2>windowMinX && matchY1<windowMaxY && matchY2<windowMaxY && matchY1>windowMinY && matchY2>windowMinY)
 		{
-		rData->MoveTo(matchX1, matchY1);
-		rData->LineTo(matchX2, matchY2); 
+		pDC->MoveTo(matchX1, matchY1);
+		pDC->LineTo(matchX2, matchY2); 
 		}
 	}
-rData->SelectObject(pOldPen);   
-newPen.DeleteObject(); 
-ReleaseDC(rData);
+pDC->SelectObject(pOldPen);   
+//newPen.DeleteObject(); 
+DeleteObject(newPen.m_hObject); 
+ReleaseDC(pDC);
 }
 //-----------------//
 

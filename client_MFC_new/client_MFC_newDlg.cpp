@@ -1,8 +1,13 @@
+#define CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #include <string>
 #include "stdafx.h"
 #include "client_MFC_new.h"
 #include "client_MFC_newDlg.h"
 #include "afxdialogex.h"
+#include <windows.h>
 
 #include "CameraDlg.h"
 #include "SonarDlg.h"
@@ -22,7 +27,7 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#define TM 220
+#define TM 100
 //#define sPro 200
 #define dPro 0.6       // For MAP proportion <<  >>
 #define rPro 0.6   
@@ -34,15 +39,12 @@
 //using namespace std;
 using std::vector;
 //vector< double > vec[1][4];     // vector< int > vcc(20)
-int co=0,csPro=200,flag=0,readingNo=0,srX=0,srY=0,f1=0,px,py;
-int staticMkey=0,currentMkey=0;
-float ccx[1024],ccy[1024],ssx[1024],ssy[1024],zzx[10240],zzy[10240],lenX1,lenY1;//ccxNew[500][4],ccyNew[500][4];
-float X1,X2,Y1,Y2,mX1,mX2,mY1,mY2,dX,dY,picX,picY,mX,mY,lenX,lenY,delX,delY,matchX1,matchY1,matchX2,matchY2;
-float mlenX,mlenY,mlenX1,mlenY1,mdelX,mdelY,moveex=0,moveey=0,rotatee=1,zoome=0;
+int flag=0,staticMkey=0,currentMkey=0,windowMaxX=452,windowMinX=6,windowMaxY=340,windowMinY=18;
+int sonarX=0,sonarY=0,readingNo=0,approX=0,approY=0,srX=0,srY=0,px=0,py=0;
+float ccx[1024],ccy[1024],matchX1=0,matchY1=0,matchX2=0,matchY2=0,moveex=0,moveey=0,rotatee=1,zoome=0;
+float X1=0,X2=0,Y1=0,Y2=0,mX1=0,mX2=0,mY1=0,mY2=0,mlenX=0,mlenY=0,mlenX1=0,mlenY1=0,mdelX=0,mdelY=0;
 bool safedrive=0;
-int sonarX=0,sonarY=0,readingNum=0;
-int windowMaxX=452,windowMinX=6,windowMaxY=340,windowMinY=18;
-double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,byX,byY;
+double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,byX=0,byY=0;
 CString Warning;
 CString Global_IP;
 
@@ -149,6 +151,7 @@ END_MESSAGE_MAP()
 // Cclient_MFC_newDlg 消息处理程序
 BOOL Cclient_MFC_newDlg::OnInitDialog()
 {
+_CrtDumpMemoryLeaks();
 CDialogEx::OnInitDialog();
 
 // 将“关于...”菜单项添加到系统菜单中。
@@ -178,7 +181,8 @@ SetIcon(m_hIcon, FALSE); // 设置小图标
 
 // TODO: 在此添加额外的初始化代码
 SetTimer(1, TM, NULL);  // set TIMER 
-m_IP.SetAddress(192,168,244,128);
+m_IP.SetAddress(192,168,1,120);
+
 return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -317,7 +321,7 @@ pOldPen = pDC->SelectObject(&newPen); // 选择新画笔，并将旧画笔的指针保存到pOldP
 		}
 	}*/
 
-	for(int t=0;t<readingNo-1;t++)
+	for(int t=0;t<readingNo;t++)
 	{
 	currentMX=(16000+moveex*currentMkey); // laser's largest data (scan range) will not   
 	currentMY=(19000+moveey*currentMkey); // exceed 20000 for X or Y coordinates
@@ -328,8 +332,11 @@ pOldPen = pDC->SelectObject(&newPen); // 选择新画笔，并将旧画笔的指针保存到pOldP
 	
 		if(X1<windowMaxX && X2<windowMaxX && X1>windowMinX && X2>windowMinX && Y1<windowMaxY && Y2<windowMaxY && Y1>windowMinY && Y2>windowMinY)
 		{
-		pDC->MoveTo(X1, Y1);
-		pDC->LineTo(X2, Y2); 
+			if(X1!=160 && X2!=160 && Y1!=190 && Y2!=190)   // avoid (0, 0, 0.0) point be plotted on the screen
+			{
+			pDC->MoveTo(X1, Y1);
+			pDC->LineTo(X2, Y2); 
+			}
 		}
 	}  
 
@@ -353,6 +360,7 @@ rY= (currentMY+tempY)/(100+zoome*currentMkey);
 	}  
 pDC->SelectObject(pOldPen_bot);   
 newPen_bot.DeleteObject(); 
+ReleaseDC(pDC);
 } 
 //---------------------//
 
@@ -399,6 +407,7 @@ pOldPen = rData->SelectObject(&newPen);
 	}
 rData->SelectObject(pOldPen);   
 newPen.DeleteObject(); 
+ReleaseDC(rData);
 }
 //-----------------//
 
@@ -430,10 +439,10 @@ pOldPen = mDC->SelectObject(&newPen);  // 选择新画笔，并将旧画笔的指针保存到pOld
 			
 	for(vector<ArLineSegment>::iterator itM = armap.getLines()->begin();itM != armap.getLines()->end();itM++)
 	{
-	zzx[a1]=(*itM).getX1();
+	/*zzx[a1]=(*itM).getX1();
 	zzy[a1]=(*itM).getY1();      
 	zzx[b1]=(*itM).getX2();       
-	zzy[b1]=(*itM).getY2();   
+	zzy[b1]=(*itM).getY2(); */  
 		
 	mlenX = armap.getLineMaxPose().getX() - armap.getLineMinPose().getX();
 	mlenY = armap.getLineMaxPose().getY() - armap.getLineMinPose().getY();
@@ -454,11 +463,12 @@ pOldPen = mDC->SelectObject(&newPen);  // 选择新画笔，并将旧画笔的指针保存到pOld
 
 	a1=a1+2;
 	b1=b1+2;
-	f1=f1+1;
+	//f1=f1+1;
 	}
     
 mDC->SelectObject(pOldPen); // 恢复旧画笔  
 newPen.DeleteObject();  // 删除新画笔   
+ReleaseDC(mDC);
 }
 //-----------------//
 
@@ -479,6 +489,7 @@ smDC->LineTo(srX, srY);
    
 smDC->SelectObject(pOldPen);    
 newPen.DeleteObject(); 
+ReleaseDC(smDC);
 }
 //-----------------//
 
@@ -492,9 +503,11 @@ CPoint pointP;
 //GetDlgItem(IDC_MAP_DRAW)->GetWindowRect(&rectP);
 //ScreenToClient(&pointP);
 
-GetDlgItem(IDC_MAP_DRAW)->GetClientRect(&rectP);
+//GetDlgItem(IDC_MAP_DRAW)->GetClientRect(&rectP);
+
 GetCursorPos(&pointP);
 ScreenToClient(&pointP);
+
 
 px=pointP.x;
 py=pointP.y;
@@ -543,33 +556,33 @@ void robotInfo(ArNetPacket *packet)
 * translational velocity, and current rotational velocity. Translation is
 * always milimeters, rotation in degrees.
 */
-double myX;
-double myY;
-double myTh;
-double myVel;
-double myRotVel;
-double myVoltage;
-char myStatus[256];
-char myMode[32];
+double myX_1;
+double myY_1;
+double myTh_1;
+double myVel_1;
+double myRotVel_1;
+double myVoltage_1;
+char myStatus_1[256];
+char myMode_1[32];
 
-memset(myStatus, 0, sizeof(myStatus));
-memset(myMode, 0, sizeof(myMode));
-packet->bufToStr(myStatus, sizeof(myStatus));
-packet->bufToStr(myMode, sizeof(myMode));
-myVoltage = ( (double) packet->bufToByte2() )/10.0;
-myX = (double) packet->bufToByte4();
-myY = (double) packet->bufToByte4();
-myTh = (double) packet->bufToByte2();
-myVel = (double) packet->bufToByte2();
-myRotVel = (double) packet->bufToByte2();
+memset(myStatus_1, 0, sizeof(myStatus_1));
+memset(myMode_1, 0, sizeof(myMode_1));
+packet->bufToStr(myStatus_1, sizeof(myStatus_1));
+packet->bufToStr(myMode_1, sizeof(myMode_1));
+myVoltage_1 = ( (double) packet->bufToByte2() )/10.0;
+myX_1 = (double) packet->bufToByte4();
+myY_1 = (double) packet->bufToByte4();
+myTh_1 = (double) packet->bufToByte2();
+myVel_1 = (double) packet->bufToByte2();
+myRotVel_1 = (double) packet->bufToByte2();
 
 fflush(stdout);
 
-tempX=myX;
-tempY=myY;
-tempA=myTh;
-tempB=myVoltage;
-tempV=myVel;
+tempX=myX_1;
+tempY=myY_1;
+tempA=myTh_1;
+tempB=myVoltage_1;
+tempV=myVel_1;
 }
 //-------//
 
@@ -578,7 +591,7 @@ tempV=myVel;
 void sonarData(ArNetPacket* packet)
 {
 using namespace std;
-int cc=0;
+//int cc=0;
 char sName[50];
 ofstream write;
 ArMap armap;
@@ -586,16 +599,16 @@ ArMap armap;
 readingNo = packet->bufToByte2();       // Number of reading
 packet->bufToStr(sName, sizeof(sName)); // Sensor name
 
-	for(int i=0;i<readingNo*2;i++)
+	for(int i=0;i<readingNo;i++)
 	{ 
 	sonarX = packet->bufToByte4();  // X coordinate
 	sonarY = packet->bufToByte4();  // Y coordinate
+		
 	ccx[i] = sonarX;
 	ccy[i] = sonarY;
-
 	//ssx[cc] = sonarX;
 	//ssy[cc] = sonarY;
-	cc = cc + 1;
+	//cc = cc + 1;
 	}
 
 /* sort the data in order to get max & min number */
@@ -740,9 +753,9 @@ ofstream write;
 		case 24:rotatee=340;break;
 		case 28:rotatee=20;break;
 		}
-		ArUtil::sleep(200);
+		ArUtil::sleep(500);
 	}
-return flag;
+return 0;
 }
 //-------//
 
@@ -840,10 +853,10 @@ client.addHandler("getConfigBySections", &getConfigCB);*/
 
 //client.requestOnce("getSensorList");
 
-client.request("update",TM-2); 
+client.request("update",TM); 
 
 requestPacket.strToBuf("sim_S3Series_1"); // sim_S3Series_1 for mobileSim use only
-client.request("getSensorCurrent",TM-2,&requestPacket); 
+client.request("getSensorCurrent",TM/2,&requestPacket); 
 
 	/*if(flag==16)
 	{
@@ -875,7 +888,7 @@ client.requestOnce("setGoals");
 		case 5:client.requestOnce("stop");flag=0;break;  //inputHandler.doStop();flag=0;break;
 		
 		case 11:client.requestOnce("localizeToPose");flag=0;break;
-		case 12:pkt.strToBuf("Workshop");client.requestOnce("gotoGoal",&pkt);ArUtil::sleep((TM-2)*10);break;
+		case 12:pkt.strToBuf("Workshop");client.requestOnce("gotoGoal",&pkt);ArUtil::sleep((TM)*60);break;
 		case 14:client.requestOnce("wander");ArUtil::sleep(2600);break;
 		case 13:client.requestStop("gotoGoal");flag=0;break; 
 		}
@@ -887,7 +900,17 @@ client.requestOnce("setGoals");
 	/* make sure both point to same robot */
 	
 	if(inputHandler.getClient()!=outputHandler.getClient()){outputHandler.setClient( inputHandler.getClient() );}
-	ArUtil::sleep(100);
+	ArUtil::sleep(100); // set sleep time here to avoid use of too much CPU resource
+
+	if(GetAsyncKeyState(VK_RBUTTON)&0x8000)
+	{
+	ArNetPacket pk;
+	pk.byte4ToBuf(approX);
+	pk.byte4ToBuf(approY);
+	pk.byte4ToBuf(0);          //gotoPose
+	client.requestOnce("localizeToPose",&pk);
+	flag=0;
+	}
 
 	/*tempX=outputHandler.myX;
 	tempY=outputHandler.myY;
@@ -959,8 +982,10 @@ m_Yposition = tempY;
 m_Angle = tempA;
 m_Voltage = tempB;
 m_Volocity = tempV;
-m_byX = px;  // coordinates for mouse point
-m_byY = py;
+m_byX = (px-38)*(100+zoome*currentMkey)-(16000+moveex*currentMkey);  // coordinates for mouse point
+m_byY = (py-34)*(100+zoome*currentMkey)-(19000+moveey*currentMkey);
+approX= (px-38)*(100+zoome*currentMkey)-(16000+moveex*currentMkey);
+approY= (py-34)*(100+zoome*currentMkey)-(19000+moveey*currentMkey);
 UpdateData(false);
 
 if(m_SafeDrive.GetCheck()){safedrive=true;}
@@ -978,7 +1003,11 @@ rawDataTrans(m_mapDraw.GetDC(), rectPicture); // drawing static MAP
 //DrawRobot(m_mapDraw.GetDC(), rectPicture);    // drawing the robot on MAP
 //smMap(m_staticMapDraw.GetDC(), rectPicture);  // drawing the static MAP	
 
-if(flag==18){OnLButtonDblClk();}
+	if(flag==18)
+	{
+	OnLButtonDblClk();
+	}
+
 CDialogEx::OnTimer(nIDEvent);
 }
 //------------------------//
@@ -1050,6 +1079,9 @@ flag=12;    // goto pose
 void Cclient_MFC_newDlg::OnBnClickedButton17()
 {
 flag=16; //load MAP
+/*CRect rectPicture;   
+m_mapDraw.GetClientRect(&rectPicture);   
+rawDataTrans(m_mapDraw.GetDC(), rectPicture); // drawing static MAP */
 }
 
 void Cclient_MFC_newDlg::OnBnClickedButton18()

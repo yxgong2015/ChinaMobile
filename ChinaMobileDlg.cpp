@@ -1,5 +1,5 @@
 /* ------------------------------------------------------- *
- * Last modification date 2015/3/12 09:32  by: Xiaoxi Gong *
+ * Last modification date 2015/3/12 18:36  by: Xiaoxi Gong *
  * ------------------------------------------------------- *
 */
 /*#define CRTDBG_MAP_ALLOC
@@ -15,6 +15,7 @@
 #include <iostream.h>
 #include <fstream.h>
 #include <vector>
+#include <math.h>
 
 #include "Aria.h"
 #include "ArNetworking.h"
@@ -25,16 +26,14 @@
 #define TM 120
 #endif
 
-CString Global_IP;
-CString Warning;
-CString Goal_name;
-
 int flag=0,laserReadingNo=0,laserReadingX[512],laserReadingY[512],mouseX=0,mouseY=0,selectMap=0,selectLaser=0;
 int pathReadingNo=0,pathReadingX[128],pathReadingY[128];
 double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,mousePoseX=0,mousePoseY=0;
-float windowMaxX=452,windowMinX=6,windowMaxY=340,windowMinY=18,zoomMap=0,shiftX=0,shiftY=0;
+float windowMaxX=452,windowMinX=6,windowMaxY=340,windowMinY=18,zoomMap=0,shiftX=0,shiftY=0,robot_Th=0;
+
 bool safedrive=0;
 
+CString Global_IP,Warning,Goal_name,Goal_list;
 std::vector<ArLineSegment> sMap;
 
 
@@ -133,6 +132,7 @@ void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
 	ON_BN_CLICKED(IDC_BUTTON21, &CChinaMobileDlg::OnBnClickedButton21)
 	ON_BN_CLICKED(IDC_BUTTON22, &CChinaMobileDlg::OnBnClickedButton22)
 	ON_BN_CLICKED(IDC_BUTTON10, &CChinaMobileDlg::OnBnClickedButton10)
+	ON_BN_CLICKED(IDC_BUTTON23, &CChinaMobileDlg::OnBnClickedButton23)
 	END_MESSAGE_MAP()
 
 
@@ -280,7 +280,7 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 	/* draw current laser MAP */
 	CPen newPen_lsr;   // 用于创建新画笔   
 	CPen *pOldPen_lsr; // 用于存放旧画笔   
-	newPen_lsr.CreatePen(PS_SOLID, 2, RGB(0,249,0)); // 创建实心画笔，粗度为2，颜色为绿色    
+	newPen_lsr.CreatePen(PS_DOT, 2, RGB(0,249,0)); // 创建实心画笔，粗度为2，颜色为绿色    
 	pOldPen_lsr = pDC->SelectObject(&newPen_lsr); // 选择新画笔，并将旧画笔的指针保存到pOldPen 
 
 	originX = (19000+shiftX*selectMap)/(100+zoomMap*selectMap);
@@ -311,18 +311,30 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 
 
     /* draw current robot position on MAP */
+	/*float lfx=0,lfy=0, rfx=0,rfy=0, lrx=0,lry=0, rrx=0,rry=0,length_R=304.6;
+	POINT botSize[4]={{lfx,lfy},{rfx,rfy},{lrx,lry},{rrx,rry}};
+	robot_Th = tempA;
+	rfx=(tempX+length_R*cos(45+robot_Th)+19000+shiftX*selectMap)/(100+zoomMap*selectMap);
+	rfy=(tempY+length_R*sin(45+robot_Th)+19000+shiftY*selectMap)/(100+zoomMap*selectMap);
+	lfx=(tempX-length_R*cos(135+robot_Th)+19000+shiftX*selectMap)/(100+zoomMap*selectMap);
+	lfy=(tempY+length_R*sin(135+robot_Th)+19000+shiftY*selectMap)/(100+zoomMap*selectMap);
+	lrx=(tempX-length_R*cos(225+robot_Th)+19000+shiftX*selectMap)/(100+zoomMap*selectMap);
+	lry=(tempY-length_R*sin(225+robot_Th)+19000+shiftY*selectMap)/(100+zoomMap*selectMap);
+	rrx=(tempX+length_R*cos(315+robot_Th)+19000+shiftX*selectMap)/(100+zoomMap*selectMap);
+	rry=(tempY-length_R*sin(315+robot_Th)+19000+shiftY*selectMap)/(100+zoomMap*selectMap);*/	
+
 	CPen newPen_bot;    // 用于创建新画笔   
 	CPen *pOldPen_bot;  // 用于存放旧画笔    
 	newPen_bot.CreatePen(PS_SOLID, 4.5, RGB(255,0,0)); // 创建实心画笔，粗度为4.5，颜色为red   
 	pOldPen_bot = pDC->SelectObject(&newPen_bot);    // 选择新画笔，并将旧画笔的指针保存到pOldPen 
 
-	botX = (tempX+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
+	botX = (tempX+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);  // origin point of P_LX (refers to x, y, Th)
 	botY = (tempY+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
 
 		if(botX<windowMaxX && botX>windowMinX && botY<windowMaxY && botY>windowMinY)
 		{
-		pDC->MoveTo(botX, botY);
-		pDC->LineTo(botX, botY); 
+		pDC->MoveTo(botX,botY);
+		pDC->LineTo(botX,botY);
 		}
 
 	pDC->SelectObject(pOldPen_bot);   
@@ -449,6 +461,24 @@ void laserCurrent(ArNetPacket* packet)
 //--------------//
 
 
+//--- get a list of all goals ---//
+void getGoals(ArNetPacket* packet)
+{ 
+	CString goalName_bind,goalName_trans;
+	char goalName[128];
+	for(int l=0;l<20;l++)  // bind the string together
+	{
+	memset(goalName, 0, sizeof(goalName));
+	packet->bufToStr(goalName,sizeof(goalName));
+	goalName_trans=goalName;
+	goalName_bind += " __ " + goalName_trans + "\n";
+	}
+	Goal_list=goalName_bind;
+	fflush(stdout);
+}
+//-----------//
+
+
 //------ Get path points ------//
 /*void getPath(ArNetPacket* packet)
 {
@@ -569,6 +599,9 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	ArGlobalFunctor1<ArNetPacket *> laserCurrentCB(&laserCurrent);
 	client.addHandler("getSensorCurrent",&laserCurrentCB);
 
+	ArGlobalFunctor1<ArNetPacket *> getGoalsCB(&getGoals);
+	client.addHandler("getGoals",&getGoalsCB);
+
 	/*ArGlobalFunctor1<ArNetPacket *> getPathCB(&getPath);
 	client.addHandler("getPath",&getPathCB);*/
 
@@ -590,10 +623,10 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			case 5:client.requestOnce("stop");ArUtil::sleep(50);flag=0;break;  //inputHandler.doStop();
 			case 6:client.requestOnce("getMap");ArUtil::sleep(50);client.requestStop("getMap");flag=0;break;
 
-			case 10:client.requestOnce("wander");ArUtil::sleep(3600);break;
-			case 11:pkt_goal.strToBuf(Goal_name);client.requestOnce("gotoGoal");ArUtil::sleep(30000);break;
+			//case 10:client.requestOnce("wander");ArUtil::sleep(3600);break;
+			//case 11:pkt_goal.strToBuf(Goal_name);client.requestOnce("gotoGoal");ArUtil::sleep(30000);break;
 			case 13:client.requestOnce("localizeToPose");flag=0;break; // for mobileSim use ONLY
-			case 15:client.requestOnce("tourGoals");client.run();break;
+			//case 15:client.requestOnce("tourGoals");client.run();break;
 
 			case 20:zoomMap=zoomMap-20;flag=0;break; // zoom +
 			case 21:zoomMap=zoomMap+20;flag=0;break; // zoom -
@@ -601,7 +634,9 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			case 23:shiftY=shiftY+2000;flag=0;break; // down
 			case 24:shiftX=shiftX-2000;flag=0;break; // left
 			case 25:shiftX=shiftX+2000;flag=0;break; // right
-	
+
+			case 30:client.requestOnce("getGoals");flag=0;break;
+
 			case 99:client.disconnect();flag=0;break; // disconnect from server
 			}
 		
@@ -613,6 +648,13 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			/* make sure both point to same robot */
 			if(inputHandler.getClient()!=outputHandler.getClient()){outputHandler.setClient( inputHandler.getClient() );}
 
+
+			/* --------------------------------------------------- *
+			 * rewrite the task which needs the long time duration *
+			 * --------------------------------------------------- *
+			*/
+
+			/* localize to the specify point */
 			if(flag==12 && GetAsyncKeyState(VK_RBUTTON)&0x8000)
 			{
 			pkt.byte4ToBuf(mousePoseX);
@@ -622,17 +664,63 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			flag=0;
 			}
 
+			/* wander mode */
+			if(flag==10)
+			{
+			client.requestOnce("wander");
+				while(1)
+				{
+				ArUtil::sleep(200);
+				if(flag==5)goto outside_1;
+				}
+			outside_1:
+			flag=0;
+			}
+
+			/* goto a specify point/goal */
+			if(flag==11)
+			{
+			pkt_goal.strToBuf(Goal_name);
+			client.requestOnce("gotoGoal");
+				while(1)
+				{
+				ArUtil::sleep(200);
+				if(flag==5)goto outside_2;
+				}
+			outside_2:
+			flag=0;
+			}
+
+			/* send robot to some position */
 			if(flag==14 && GetAsyncKeyState(VK_RBUTTON)&0x8000)
 			{
 			pkt_1.byte4ToBuf(mousePoseX);
 			pkt_1.byte4ToBuf(mousePoseY);
 			pkt_1.byte4ToBuf(0); // goto pose
 			client.requestOnce("gotoPose",&pkt_1);
-			ArUtil::sleep(12000);
+				while(1)
+				{
+				ArUtil::sleep(200);
+				if(flag==5)goto outside_3;
+				}
+			outside_3:
 			flag=0;
 			}
 
-		ArUtil::sleep(200); // set sleep time here to avoid use of too much CPU resource
+			/* tour all goals in the MAP */
+			if(flag==15)
+			{
+			client.requestOnce("tourGoals");
+				while(1)
+				{
+				ArUtil::sleep(200);
+				if(flag==5)goto outside_4;
+				}
+			outside_4:
+			flag=0;
+			}
+			
+		ArUtil::sleep(50); // set sleep time here to avoid use of too much CPU resource
 		}
 }
 //-------------------//
@@ -729,7 +817,7 @@ void CChinaMobileDlg::OnBnClickedButton8()
 
 void CChinaMobileDlg::OnBnClickedButton11()
 {
-	flag=6;
+	flag=6; // load server MAP
 }
 
 
@@ -817,11 +905,20 @@ void CChinaMobileDlg::OnBnClickedButton21()
 
 void CChinaMobileDlg::OnBnClickedButton22()
 {
-	zoomMap=0,shiftX=0,shiftY=0;// reset map size
+	zoomMap=0,shiftX=0,shiftY=0; // reset map size
 }
 
 
 void CChinaMobileDlg::OnBnClickedButton10()
 {
 	// TODO: 在此添加控件通知处理程序代码
+}
+
+
+void CChinaMobileDlg::OnBnClickedButton23()
+{
+	flag=30; // show goal name list
+	CString g_info;
+	g_info="GOAL LIST: " + Goal_list + " __ END";
+	m_log.SetWindowText(g_info);
 }

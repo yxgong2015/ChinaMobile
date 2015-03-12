@@ -1,5 +1,5 @@
 /* ------------------------------------------------------- *
- * Last modification data 2015/3/12 00:52  by: Xiaoxi Gong *
+ * Last modification date 2015/3/12 09:32  by: Xiaoxi Gong *
  * ------------------------------------------------------- *
 */
 /*#define CRTDBG_MAP_ALLOC
@@ -30,6 +30,7 @@ CString Warning;
 CString Goal_name;
 
 int flag=0,laserReadingNo=0,laserReadingX[512],laserReadingY[512],mouseX=0,mouseY=0,selectMap=0,selectLaser=0;
+int pathReadingNo=0,pathReadingX[128],pathReadingY[128];
 double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,mousePoseX=0,mousePoseY=0;
 float windowMaxX=452,windowMinX=6,windowMaxY=340,windowMinY=18,zoomMap=0,shiftX=0,shiftY=0;
 bool safedrive=0;
@@ -103,7 +104,7 @@ void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT9, m_goal);
 }
 
-BEGIN_MESSAGE_MAP(CChinaMobileDlg, CDialogEx)
+	BEGIN_MESSAGE_MAP(CChinaMobileDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
@@ -114,25 +115,25 @@ BEGIN_MESSAGE_MAP(CChinaMobileDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON5, &CChinaMobileDlg::OnBnClickedButton5)
 	ON_BN_CLICKED(IDC_BUTTON6, &CChinaMobileDlg::OnBnClickedButton6)
 	ON_BN_CLICKED(IDC_BUTTON7, &CChinaMobileDlg::OnBnClickedButton7)
-ON_WM_TIMER()
-ON_BN_CLICKED(IDC_BUTTON8, &CChinaMobileDlg::OnBnClickedButton8)
-ON_BN_CLICKED(IDC_BUTTON11, &CChinaMobileDlg::OnBnClickedButton11)
-ON_BN_CLICKED(IDC_BUTTON9, &CChinaMobileDlg::OnBnClickedButton9)
-ON_BN_CLICKED(IDC_BUTTON12, &CChinaMobileDlg::OnBnClickedButton12)
-ON_BN_CLICKED(IDC_BUTTON13, &CChinaMobileDlg::OnBnClickedButton13)
-ON_BN_CLICKED(IDC_BUTTON14, &CChinaMobileDlg::OnBnClickedButton14)
-ON_BN_CLICKED(IDC_BUTTON15, &CChinaMobileDlg::OnBnClickedButton15)
-ON_BN_CLICKED(IDOK, &CChinaMobileDlg::OnBnClickedOk)
-ON_BN_CLICKED(IDCANCEL, &CChinaMobileDlg::OnBnClickedCancel)
-ON_BN_CLICKED(IDC_BUTTON16, &CChinaMobileDlg::OnBnClickedButton16)
-ON_BN_CLICKED(IDC_BUTTON17, &CChinaMobileDlg::OnBnClickedButton17)
-ON_BN_CLICKED(IDC_BUTTON18, &CChinaMobileDlg::OnBnClickedButton18)
-ON_BN_CLICKED(IDC_BUTTON19, &CChinaMobileDlg::OnBnClickedButton19)
-ON_BN_CLICKED(IDC_BUTTON20, &CChinaMobileDlg::OnBnClickedButton20)
-ON_BN_CLICKED(IDC_BUTTON21, &CChinaMobileDlg::OnBnClickedButton21)
-ON_BN_CLICKED(IDC_BUTTON22, &CChinaMobileDlg::OnBnClickedButton22)
-ON_BN_CLICKED(IDC_BUTTON10, &CChinaMobileDlg::OnBnClickedButton10)
-END_MESSAGE_MAP()
+	ON_WM_TIMER()
+	ON_BN_CLICKED(IDC_BUTTON8, &CChinaMobileDlg::OnBnClickedButton8)
+	ON_BN_CLICKED(IDC_BUTTON11, &CChinaMobileDlg::OnBnClickedButton11)
+	ON_BN_CLICKED(IDC_BUTTON9, &CChinaMobileDlg::OnBnClickedButton9)
+	ON_BN_CLICKED(IDC_BUTTON12, &CChinaMobileDlg::OnBnClickedButton12)
+	ON_BN_CLICKED(IDC_BUTTON13, &CChinaMobileDlg::OnBnClickedButton13)
+	ON_BN_CLICKED(IDC_BUTTON14, &CChinaMobileDlg::OnBnClickedButton14)
+	ON_BN_CLICKED(IDC_BUTTON15, &CChinaMobileDlg::OnBnClickedButton15)
+	ON_BN_CLICKED(IDOK, &CChinaMobileDlg::OnBnClickedOk)
+	ON_BN_CLICKED(IDCANCEL, &CChinaMobileDlg::OnBnClickedCancel)
+	ON_BN_CLICKED(IDC_BUTTON16, &CChinaMobileDlg::OnBnClickedButton16)
+	ON_BN_CLICKED(IDC_BUTTON17, &CChinaMobileDlg::OnBnClickedButton17)
+	ON_BN_CLICKED(IDC_BUTTON18, &CChinaMobileDlg::OnBnClickedButton18)
+	ON_BN_CLICKED(IDC_BUTTON19, &CChinaMobileDlg::OnBnClickedButton19)
+	ON_BN_CLICKED(IDC_BUTTON20, &CChinaMobileDlg::OnBnClickedButton20)
+	ON_BN_CLICKED(IDC_BUTTON21, &CChinaMobileDlg::OnBnClickedButton21)
+	ON_BN_CLICKED(IDC_BUTTON22, &CChinaMobileDlg::OnBnClickedButton22)
+	ON_BN_CLICKED(IDC_BUTTON10, &CChinaMobileDlg::OnBnClickedButton10)
+	END_MESSAGE_MAP()
 
 
 // CChinaMobileDlg 消息处理程序
@@ -274,7 +275,8 @@ void CChinaMobileDlg::drawServerMap(CDC *pDC, CRect &rectPicture)
 //-------------------- Draw laser current MAP --------------------//
 void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 {
-	float currentLaserX1=0,currentLaserX2=0,currentLaserY1=0,currentLaserY2=0,botX=0,botY=0,originX=0,originY=0;
+	float currentLaserX1=0,currentLaserX2=0,currentLaserY1=0,currentLaserY2=0,originX=0,originY=0;
+	float patX1=0,patY1=0,patX2=0,patY2=0,botX=0,botY=0;
 	/* draw current laser MAP */
 	CPen newPen_lsr;   // 用于创建新画笔   
 	CPen *pOldPen_lsr; // 用于存放旧画笔   
@@ -315,7 +317,7 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 	pOldPen_bot = pDC->SelectObject(&newPen_bot);    // 选择新画笔，并将旧画笔的指针保存到pOldPen 
 
 	botX = (tempX+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
-	botY = (tempY+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
+	botY = (tempY+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
 
 		if(botX<windowMaxX && botX>windowMinX && botY<windowMaxY && botY>windowMinY)
 		{
@@ -325,6 +327,37 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 
 	pDC->SelectObject(pOldPen_bot);   
 	newPen_bot.DeleteObject(); 
+
+
+	/* path planning to the goal */
+	/*CPen newPen_path;     
+	CPen *pOldPen_path;      
+	newPen_path.CreatePen(PS_SOLID, 2.5, RGB(0,0,229));    
+	pOldPen_path = pDC->SelectObject(&newPen_path);   
+
+	for(int pt=0;pt<pathReadingNo;pt++)
+	{
+	patX1 = (pathReadingX[pt]+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
+	patY1 = (pathReadingY[pt]+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
+	patX2 = (pathReadingX[pt+2]+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
+	patY2 = (pathReadingY[pt+2]+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
+
+		if(patX1<windowMaxX && patX1>windowMinX && patY1<windowMaxY && patY1>windowMinY &&
+			patX2<windowMaxX && patX2>windowMinX && patY2<windowMaxY && patY2>windowMinY)
+		{
+			if(patX1!=originX && patX2!=originX && 
+				patY1!=originY && patY2!=originY)
+			{
+			//pDC->MoveTo(patX1, patY1);
+			//pDC->LineTo(patX2, patY2); 
+			pDC->SetPixel(patX1, patY1, RGB(0,0,229));
+			pDC->SetPixel(patX2, patY2, RGB(0,0,229));
+			}
+		}
+	}
+	pDC->SelectObject(pOldPen_path);   
+	newPen_path.DeleteObject(); */
+
 	ReleaseDC(pDC);
 }
 //--------------//
@@ -413,6 +446,28 @@ void laserCurrent(ArNetPacket* packet)
 		}
 	fflush(stdout);
 }
+//--------------//
+
+
+//------ Get path points ------//
+/*void getPath(ArNetPacket* packet)
+{
+	int pathX=0,pathY=0;
+	memset(pathReadingX, 0, sizeof(pathReadingX));
+	memset(pathReadingY, 0, sizeof(pathReadingY));
+
+	pathReadingNo=packet->bufToByte2();
+	pathX=packet->bufToByte4();
+	pathY=packet->bufToByte4();
+
+		for(int p=0;p<pathReadingNo;p++)
+		{
+		pathReadingX[p]=pathX;
+		pathReadingY[p]=pathY;
+		}
+
+	fflush(stdout);
+}*/
 //--------------//
 
 
@@ -514,8 +569,13 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	ArGlobalFunctor1<ArNetPacket *> laserCurrentCB(&laserCurrent);
 	client.addHandler("getSensorCurrent",&laserCurrentCB);
 
+	/*ArGlobalFunctor1<ArNetPacket *> getPathCB(&getPath);
+	client.addHandler("getPath",&getPathCB);*/
+
 	/* sending requests to server */
 	client.request("update",TM); 
+
+	//client.request("getPath",TM*5);
 
 	requestPacket.strToBuf("sim_S3Series_1"); // sim_S3Series_1 for mobileSim use only
 	client.request("getSensorCurrent",TM/2,&requestPacket); 
@@ -533,7 +593,7 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			case 10:client.requestOnce("wander");ArUtil::sleep(3600);break;
 			case 11:pkt_goal.strToBuf(Goal_name);client.requestOnce("gotoGoal");ArUtil::sleep(30000);break;
 			case 13:client.requestOnce("localizeToPose");flag=0;break; // for mobileSim use ONLY
-			case 15:client.requestOnce("tourGoals");ArUtil::sleep(30000);break;
+			case 15:client.requestOnce("tourGoals");client.run();break;
 
 			case 20:zoomMap=zoomMap-20;flag=0;break; // zoom +
 			case 21:zoomMap=zoomMap+20;flag=0;break; // zoom -
@@ -544,10 +604,11 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	
 			case 99:client.disconnect();flag=0;break; // disconnect from server
 			}
-		inputHandler.sendInput();
-
+		
 			if(safedrive){inputHandler.unsafeDrive();} //安全模式
 			else{inputHandler.safeDrive();}
+
+		inputHandler.sendInput(); // don't change this code sequence here!
 
 			/* make sure both point to same robot */
 			if(inputHandler.getClient()!=outputHandler.getClient()){outputHandler.setClient( inputHandler.getClient() );}

@@ -1,5 +1,5 @@
 /* ------------------------------------------------------- *
- * Last modification date 2015/3/12 18:36  by: Xiaoxi Gong *
+ * Last modification date 2015/3/16 23:13  by: Xiaoxi Gong *
  * ------------------------------------------------------- *
 */
 /*#define CRTDBG_MAP_ALLOC
@@ -26,11 +26,10 @@
 #define TM 120
 #endif
 
-int flag=0,laserReadingNo=0,laserReadingX[512],laserReadingY[512],mouseX=0,mouseY=0,selectMap=0,selectLaser=0;
-int pathReadingNo=0,pathReadingX[128],pathReadingY[128];
+int flag=0,laserReadingNo=0,laserReadingX[512],laserReadingY[512],selectMap=0,selectLaser=0;
+//int pathReadingNo=0,pathReadingX[128],pathReadingY[128];
 double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,mousePoseX=0,mousePoseY=0;
-float windowMaxX=452,windowMinX=6,windowMaxY=340,windowMinY=18,zoomMap=0,shiftX=0,shiftY=0,robot_Th=0;
-
+float zoomMap=0,shiftX=0,shiftY=0,robot_Th=0, windowMinX=3,windowMinY=4, windowMaxX=481,windowMaxY=371;
 bool safedrive=0;
 
 CString Global_IP,Warning,Goal_name,Goal_list;
@@ -169,7 +168,7 @@ BOOL CChinaMobileDlg::OnInitDialog()
 
 	// TODO: 在此添加额外的初始化代码
 	SetTimer(1, TM, NULL);  // set TIMER 
-	m_IP.SetAddress(192,168,1,120);
+	m_IP.SetAddress(192,168,244,128);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -351,8 +350,8 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 	{
 	patX1 = (pathReadingX[pt]+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
 	patY1 = (pathReadingY[pt]+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
-	patX2 = (pathReadingX[pt+2]+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
-	patY2 = (pathReadingY[pt+2]+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
+	patX2 = (pathReadingX[pt+1]+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
+	patY2 = (pathReadingY[pt+1]+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
 
 		if(patX1<windowMaxX && patX1>windowMinX && patY1<windowMaxY && patY1>windowMinY &&
 			patX2<windowMaxX && patX2>windowMinX && patY2<windowMaxY && patY2>windowMinY)
@@ -360,10 +359,10 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 			if(patX1!=originX && patX2!=originX && 
 				patY1!=originY && patY2!=originY)
 			{
-			//pDC->MoveTo(patX1, patY1);
-			//pDC->LineTo(patX2, patY2); 
-			pDC->SetPixel(patX1, patY1, RGB(0,0,229));
-			pDC->SetPixel(patX2, patY2, RGB(0,0,229));
+			pDC->MoveTo(patX1, patY1);
+			pDC->LineTo(patX2, patY2); 
+			//pDC->SetPixel(patX1, patY1, RGB(0,0,229));
+			//pDC->SetPixel(patX1, patY1, RGB(0,0,229));
 			}
 		}
 	}
@@ -504,6 +503,7 @@ void getGoals(ArNetPacket* packet)
 //---------- Mouse coordinate ----------//
 void CChinaMobileDlg::OnLButtonDblClk()
 {
+	int mouseX=0,mouseY=0;
 	CRect rectP;
 	CPoint pointP;
 
@@ -515,8 +515,9 @@ void CChinaMobileDlg::OnLButtonDblClk()
 
 	mouseX = pointP.x;
 	mouseY = pointP.y;
-	mousePoseX= (mouseX-5)*(100)-(19000);
-	mousePoseY= (mouseY-18)*(100)-(19000);
+	mousePoseX= (mouseX-5)*(100+zoomMap*selectMap)-(19000+shiftX*selectMap);
+	mousePoseY= (mouseY-22)*(100+zoomMap*selectMap)-(19000+shiftY*selectMap);
+	ArUtil::sleep(50);
 }
 //-------//
 
@@ -587,7 +588,7 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	InputHandler inputHandler(&client);
 	OutputHandler outputHandler(&client);
 	inputHandler.safeDrive();
-	ArNetPacket requestPacket, pkt, pkt_1, pkt_goal;
+	ArNetPacket requestPacket;
 
 	/* binding requests & the CB functions */
 	ArGlobalFunctor1<ArNetPacket *> robotInfoCB(&robotInfo);
@@ -608,26 +609,20 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	/* sending requests to server */
 	client.request("update",TM); 
 
-	//client.request("getPath",TM*5);
-
 	requestPacket.strToBuf("sim_S3Series_1"); // sim_S3Series_1 for mobileSim use only
 	client.request("getSensorCurrent",TM/2,&requestPacket); 
 
 		while(client.getRunningWithLock())
 		{
+			ArNetPacket pkt, pkt_goal;
 			switch(flag){
 			case 1:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.up();ArUtil::sleep(50);break;
 			case 2:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.down();ArUtil::sleep(50);break;
 			case 3:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.left();ArUtil::sleep(50);break;
 			case 4:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.right();ArUtil::sleep(50);break;
 			case 5:client.requestOnce("stop");ArUtil::sleep(50);flag=0;break;  //inputHandler.doStop();
-			case 6:client.requestOnce("getMap");ArUtil::sleep(50);client.requestStop("getMap");flag=0;break;
-
-			//case 10:client.requestOnce("wander");ArUtil::sleep(3600);break;
-			//case 11:pkt_goal.strToBuf(Goal_name);client.requestOnce("gotoGoal");ArUtil::sleep(30000);break;
 			case 13:client.requestOnce("localizeToPose");flag=0;break; // for mobileSim use ONLY
-			//case 15:client.requestOnce("tourGoals");client.run();break;
-
+			
 			case 20:zoomMap=zoomMap-20;flag=0;break; // zoom +
 			case 21:zoomMap=zoomMap+20;flag=0;break; // zoom -
 			case 22:shiftY=shiftY-2000;flag=0;break; // up
@@ -636,7 +631,6 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			case 25:shiftX=shiftX+2000;flag=0;break; // right
 
 			case 30:client.requestOnce("getGoals");flag=0;break;
-
 			case 99:client.disconnect();flag=0;break; // disconnect from server
 			}
 		
@@ -653,6 +647,20 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			 * rewrite the task which needs the long time duration *
 			 * --------------------------------------------------- *
 			*/
+
+			/* get server MAP */
+			if(flag==6)
+			{
+			client.requestOnce("getMap");
+				while(1)
+				{
+				ArUtil::sleep(200);
+				if(flag==5)goto mp;
+				}
+			mp:
+			flag=0;
+			client.requestStop("getMap");
+			}
 
 			/* localize to the specify point */
 			if(flag==12 && GetAsyncKeyState(VK_RBUTTON)&0x8000)
@@ -680,8 +688,9 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			/* goto a specify point/goal */
 			if(flag==11)
 			{
-			pkt_goal.strToBuf(Goal_name);
-			client.requestOnce("gotoGoal");
+			//ArNetPacket pkt_goal;
+			pkt_goal.strToBuf(Goal_name); // Goal_name
+			client.requestOnce("gotoGoal",&pkt_goal);
 				while(1)
 				{
 				ArUtil::sleep(200);
@@ -694,12 +703,13 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			/* send robot to some position */
 			if(flag==14 && GetAsyncKeyState(VK_RBUTTON)&0x8000)
 			{
-			pkt_1.byte4ToBuf(mousePoseX);
-			pkt_1.byte4ToBuf(mousePoseY);
-			pkt_1.byte4ToBuf(0); // goto pose
-			client.requestOnce("gotoPose",&pkt_1);
+			pkt.byte4ToBuf(mousePoseX);
+			pkt.byte4ToBuf(mousePoseY);
+			pkt.byte4ToBuf(0); // goto pose
+			client.requestOnce("gotoPose",&pkt);
 				while(1)
 				{
+				//client.requestOnce("getPath");
 				ArUtil::sleep(200);
 				if(flag==5)goto outside_3;
 				}
@@ -748,7 +758,7 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 	if(m_safeDrive.GetCheck()){safedrive=true;}
 	else{safedrive=false;}
 	if(flag==12 || flag==14){OnLButtonDblClk();}
-	
+	if(flag==11){m_goal.GetWindowText(Goal_name);}
 	CDialogEx::OnTimer(nIDEvent);
 }
 //----------------------------//
@@ -823,11 +833,9 @@ void CChinaMobileDlg::OnBnClickedButton11()
 
 void CChinaMobileDlg::OnBnClickedButton9()
 {
-	CString goal;
-	m_goal.GetWindowText(goal);
-	(LPSTR)(LPCTSTR)Goal_name;
+	m_goal.GetWindowText(Goal_name);
 	flag=11; //goto pose
-	UpdateData(true);
+	//UpdateData(true);
 }
 
 

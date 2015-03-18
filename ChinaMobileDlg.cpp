@@ -1,5 +1,5 @@
 /* ------------------------------------------------------- *
- * Last modification date 2015/3/16 23:13  by: Xiaoxi Gong *
+ * Last modification date 2015/3/19 00:36  by: Xiaoxi Gong *
  * ------------------------------------------------------- *
 */
 /*#define CRTDBG_MAP_ALLOC
@@ -20,6 +20,7 @@
 #include "Aria.h"
 #include "ArNetworking.h"
 #include "robot.h"
+#include "MapDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -28,11 +29,12 @@
 
 int flag=0,laserReadingNo=0,laserReadingX[512],laserReadingY[512],selectMap=0,selectLaser=0;
 //int pathReadingNo=0,pathReadingX[128],pathReadingY[128];
-double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,mousePoseX=0,mousePoseY=0;
+double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,mousePoseX=0,mousePoseY=0,localScore=0;
 float zoomMap=0,shiftX=0,shiftY=0,robot_Th=0, windowMinX=3,windowMinY=4, windowMaxX=481,windowMaxY=371;
 bool safedrive=0;
 
-CString Global_IP,Warning,Goal_name,Goal_list;
+
+CString Global_IP,Warning,Goal_name,Goal_list,loalStatus,map_name;
 std::vector<ArLineSegment> sMap;
 
 
@@ -83,6 +85,9 @@ CChinaMobileDlg::CChinaMobileDlg(CWnd* pParent /*=NULL*/)
 	m_Voltage = 0.0;
 	m_px = 0.0;
 	m_py = 0.0;
+	m_score = 0.0;
+	m_status = _T("");
+	m_mapName = _T("");
 }
 
 void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
@@ -100,6 +105,9 @@ void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT7, m_px);
 	DDX_Text(pDX, IDC_EDIT8, m_py);
 	DDX_Control(pDX, IDC_EDIT9, m_goal);
+	DDX_Text(pDX, IDC_EDIT10, m_score);
+	DDX_Text(pDX, IDC_EDIT11, m_status);
+	DDX_Text(pDX, IDC_EDIT12, m_mapName);
 }
 
 	BEGIN_MESSAGE_MAP(CChinaMobileDlg, CDialogEx)
@@ -310,6 +318,7 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 
 
     /* draw current robot position on MAP */
+
 	/*float lfx=0,lfy=0, rfx=0,rfy=0, lrx=0,lry=0, rrx=0,rry=0,length_R=304.6;
 	POINT botSize[4]={{lfx,lfy},{rfx,rfy},{lrx,lry},{rrx,rry}};
 	robot_Th = tempA;
@@ -324,7 +333,7 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 
 	CPen newPen_bot;    // 用于创建新画笔   
 	CPen *pOldPen_bot;  // 用于存放旧画笔    
-	newPen_bot.CreatePen(PS_SOLID, 4.5, RGB(255,0,0)); // 创建实心画笔，粗度为4.5，颜色为red   
+	newPen_bot.CreatePen(PS_SOLID, 5.5, RGB(255,0,0)); // 创建实心画笔，粗度为4.5，颜色为red   
 	pOldPen_bot = pDC->SelectObject(&newPen_bot);    // 选择新画笔，并将旧画笔的指针保存到pOldPen 
 
 	botX = (tempX+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);  // origin point of P_LX (refers to x, y, Th)
@@ -374,6 +383,18 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 //--------------//
 
 
+//--------- get MAP name ---------//
+void getMapName(ArNetPacket* packet)
+{
+	char mapNam[64];
+	memset(mapNam,0,sizeof(mapNam));
+	packet->bufToStr(mapNam,sizeof(mapNam));
+	fflush(stdout);
+	map_name=mapNam;
+}
+//---------------//
+
+
 //---------- robotInfo ----------//
 void robotInfo(ArNetPacket* packet)
 {
@@ -411,7 +432,32 @@ void robotInfo(ArNetPacket* packet)
 	tempB=myVoltage_1;
 	tempV=myVel_1;
 }
-//---------//
+//-------------//
+
+
+//---- gets localization state ----//
+void getLocState(ArNetPacket* packet)
+{
+	double state=0, score=0;
+	state = (double) packet->bufToUByte();
+	score = (double) packet->bufToUByte2();
+	fflush(stdout);
+
+	localScore=score/10;
+}
+//-------------------//
+
+
+//---- gets localization status ----//
+void pathPlannerStatus(ArNetPacket* packet)
+{
+	char localStatus[64];
+	memset(localStatus,0,sizeof(localStatus));
+	packet->bufToStr(localStatus, sizeof(localStatus));
+	fflush(stdout);
+	loalStatus=localStatus;
+}
+//----------------------//
 
 
 //----- Get MAP from server ------//
@@ -475,7 +521,7 @@ void getGoals(ArNetPacket* packet)
 	Goal_list=goalName_bind;
 	fflush(stdout);
 }
-//-----------//
+//--------------//
 
 
 //------ Get path points ------//
@@ -519,7 +565,7 @@ void CChinaMobileDlg::OnLButtonDblClk()
 	mousePoseY= (mouseY-22)*(100+zoomMap*selectMap)-(19000+shiftY*selectMap);
 	ArUtil::sleep(50);
 }
-//-------//
+//-----------------//
 
 
 //-------- Main thread of the program --------//
@@ -591,8 +637,17 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	ArNetPacket requestPacket;
 
 	/* binding requests & the CB functions */
+	ArGlobalFunctor1<ArNetPacket *> getMapNameCB(&getMapName);
+	client.addHandler("getMapName", &getMapNameCB);
+	
 	ArGlobalFunctor1<ArNetPacket *> robotInfoCB(&robotInfo);
 	client.addHandler("update", &robotInfoCB);
+
+	ArGlobalFunctor1<ArNetPacket *> getLocStateCB(&getLocState);
+	client.addHandler("getLocState", &getLocStateCB);
+
+	ArGlobalFunctor1<ArNetPacket *> pathPlannerStatusCB(&pathPlannerStatus);
+	client.addHandler("pathPlannerStatus", &pathPlannerStatusCB);
 
 	ArGlobalFunctor1<ArNetPacket *> getMapCB(&getMap);
 	client.addHandler("getMap", &getMapCB);
@@ -607,8 +662,14 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	client.addHandler("getPath",&getPathCB);*/
 
 	/* sending requests to server */
+	client.requestOnce("getMapName");
+
 	client.request("update",TM); 
 
+	client.request("getLocState",TM);
+
+	client.request("pathPlannerStatus",TM);
+	
 	requestPacket.strToBuf("sim_S3Series_1"); // sim_S3Series_1 for mobileSim use only
 	client.request("getSensorCurrent",TM/2,&requestPacket); 
 
@@ -747,6 +808,9 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 	m_Velocity = tempV;
 	m_px = mousePoseX;
 	m_py = mousePoseY;
+	m_score=localScore;
+	m_status=loalStatus;
+	m_mapName=map_name;
 	UpdateData(false);
 
 	CRect rectPicture;   
@@ -919,7 +983,9 @@ void CChinaMobileDlg::OnBnClickedButton22()
 
 void CChinaMobileDlg::OnBnClickedButton10()
 {
-	// TODO: 在此添加控件通知处理程序代码
+	MapDlg *dlg1 = new MapDlg;  // open a new dialog of MAP
+	dlg1->Create(IDD_DIALOG1); 
+	dlg1->ShowWindow(SW_SHOW);
 }
 
 

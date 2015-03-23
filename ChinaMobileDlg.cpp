@@ -1,5 +1,5 @@
 /* ------------------------------------------------------- *
- * Last modification date 2015/3/19 00:36  by: Xiaoxi Gong *
+ * Last modification date 2015/3/23 19:13  by: Xiaoxi Gong *
  * ------------------------------------------------------- *
 */
 /*#define CRTDBG_MAP_ALLOC
@@ -21,13 +21,14 @@
 #include "ArNetworking.h"
 #include "robot.h"
 #include "MapDlg.h"
+#include "taskDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#define TM 120
+#define TM 50
 #endif
 
-int flag=0,laserReadingNo=0,laserReadingX[512],laserReadingY[512],selectMap=0,selectLaser=0;
+int flag=0,laserReadingNo=0,laserReadingX[512],laserReadingY[512],selectMap=1,selectLaser=1;
 //int pathReadingNo=0,pathReadingX[128],pathReadingY[128];
 double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,mousePoseX=0,mousePoseY=0,localScore=0;
 float zoomMap=0,shiftX=0,shiftY=0,robot_Th=0, windowMinX=3,windowMinY=4, windowMaxX=481,windowMaxY=371;
@@ -131,7 +132,7 @@ void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
 	ON_BN_CLICKED(IDC_BUTTON15, &CChinaMobileDlg::OnBnClickedButton15)
 	ON_BN_CLICKED(IDOK, &CChinaMobileDlg::OnBnClickedOk)
 	ON_BN_CLICKED(IDCANCEL, &CChinaMobileDlg::OnBnClickedCancel)
-	ON_BN_CLICKED(IDC_BUTTON16, &CChinaMobileDlg::OnBnClickedButton16)
+	//ON_BN_CLICKED(IDC_BUTTON16, &CChinaMobileDlg::OnBnClickedButton16)
 	ON_BN_CLICKED(IDC_BUTTON17, &CChinaMobileDlg::OnBnClickedButton17)
 	ON_BN_CLICKED(IDC_BUTTON18, &CChinaMobileDlg::OnBnClickedButton18)
 	ON_BN_CLICKED(IDC_BUTTON19, &CChinaMobileDlg::OnBnClickedButton19)
@@ -140,6 +141,8 @@ void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
 	ON_BN_CLICKED(IDC_BUTTON22, &CChinaMobileDlg::OnBnClickedButton22)
 	ON_BN_CLICKED(IDC_BUTTON10, &CChinaMobileDlg::OnBnClickedButton10)
 	ON_BN_CLICKED(IDC_BUTTON23, &CChinaMobileDlg::OnBnClickedButton23)
+	ON_BN_CLICKED(IDC_BUTTON25, &CChinaMobileDlg::OnBnClickedButton25)
+	ON_BN_CLICKED(IDC_BUTTON16, &CChinaMobileDlg::OnBnClickedButton16)
 	END_MESSAGE_MAP()
 
 
@@ -283,7 +286,9 @@ void CChinaMobileDlg::drawServerMap(CDC *pDC, CRect &rectPicture)
 void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 {
 	float currentLaserX1=0,currentLaserX2=0,currentLaserY1=0,currentLaserY2=0,originX=0,originY=0;
-	float patX1=0,patY1=0,patX2=0,patY2=0,botX=0,botY=0;
+	//float patX1=0,patY1=0,patX2=0,patY2=0,botX=0,botY=0;
+	double headX1=0,headY1=0,headX2=0,headY2=0;
+
 	/* draw current laser MAP */
 	CPen newPen_lsr;   // 用于创建新画笔   
 	CPen *pOldPen_lsr; // 用于存放旧画笔   
@@ -318,31 +323,22 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 
 
     /* draw current robot position on MAP */
-
-	/*float lfx=0,lfy=0, rfx=0,rfy=0, lrx=0,lry=0, rrx=0,rry=0,length_R=304.6;
-	POINT botSize[4]={{lfx,lfy},{rfx,rfy},{lrx,lry},{rrx,rry}};
-	robot_Th = tempA;
-	rfx=(tempX+length_R*cos(45+robot_Th)+19000+shiftX*selectMap)/(100+zoomMap*selectMap);
-	rfy=(tempY+length_R*sin(45+robot_Th)+19000+shiftY*selectMap)/(100+zoomMap*selectMap);
-	lfx=(tempX-length_R*cos(135+robot_Th)+19000+shiftX*selectMap)/(100+zoomMap*selectMap);
-	lfy=(tempY+length_R*sin(135+robot_Th)+19000+shiftY*selectMap)/(100+zoomMap*selectMap);
-	lrx=(tempX-length_R*cos(225+robot_Th)+19000+shiftX*selectMap)/(100+zoomMap*selectMap);
-	lry=(tempY-length_R*sin(225+robot_Th)+19000+shiftY*selectMap)/(100+zoomMap*selectMap);
-	rrx=(tempX+length_R*cos(315+robot_Th)+19000+shiftX*selectMap)/(100+zoomMap*selectMap);
-	rry=(tempY-length_R*sin(315+robot_Th)+19000+shiftY*selectMap)/(100+zoomMap*selectMap);*/	
-
 	CPen newPen_bot;    // 用于创建新画笔   
 	CPen *pOldPen_bot;  // 用于存放旧画笔    
 	newPen_bot.CreatePen(PS_SOLID, 5.5, RGB(255,0,0)); // 创建实心画笔，粗度为4.5，颜色为red   
 	pOldPen_bot = pDC->SelectObject(&newPen_bot);    // 选择新画笔，并将旧画笔的指针保存到pOldPen 
 
-	botX = (tempX+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);  // origin point of P_LX (refers to x, y, Th)
-	botY = (tempY+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
+	/* robot towards the direction based on tempA value */
+	headX1 = (tempX+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
+	headY1 = (tempY+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
+	headX2 = ((tempX+250*cos(tempA/180*3.1416))+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap); 
+	headY2 = ((tempY+250*sin(tempA/180*3.1416))+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
 
-		if(botX<windowMaxX && botX>windowMinX && botY<windowMaxY && botY>windowMinY)
+		if(headX1<windowMaxX && headX1>windowMinX && headX2<windowMaxX && headX1>windowMinX &&
+			headY1<windowMaxY && headY1>windowMinY && headY2<windowMaxY && headY2>windowMinY)
 		{
-		pDC->MoveTo(botX,botY);
-		pDC->LineTo(botX,botY);
+		pDC->MoveTo(headX1,headY1);
+		pDC->LineTo(headX2,headY2);
 		}
 
 	pDC->SelectObject(pOldPen_bot);   
@@ -516,7 +512,7 @@ void getGoals(ArNetPacket* packet)
 	memset(goalName, 0, sizeof(goalName));
 	packet->bufToStr(goalName,sizeof(goalName));
 	goalName_trans=goalName;
-	goalName_bind += " __ " + goalName_trans + "\n";
+	goalName_bind += " __ " + goalName_trans + "\r\n";
 	}
 	Goal_list=goalName_bind;
 	fflush(stdout);
@@ -664,6 +660,8 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	/* sending requests to server */
 	client.requestOnce("getMapName");
 
+	client.requestOnce("getGoals");
+
 	client.request("update",TM); 
 
 	client.request("getLocState",TM);
@@ -671,7 +669,7 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	client.request("pathPlannerStatus",TM);
 	
 	requestPacket.strToBuf("sim_S3Series_1"); // sim_S3Series_1 for mobileSim use only
-	client.request("getSensorCurrent",TM/2,&requestPacket); 
+	client.request("getSensorCurrent",TM*2,&requestPacket); 
 
 		while(client.getRunningWithLock())
 		{
@@ -679,9 +677,9 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			switch(flag){
 			case 1:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.up();ArUtil::sleep(50);break;
 			case 2:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.down();ArUtil::sleep(50);break;
-			case 3:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.left();ArUtil::sleep(50);break;
-			case 4:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.right();ArUtil::sleep(50);break;
-			case 5:client.requestOnce("stop");ArUtil::sleep(50);flag=0;break;  //inputHandler.doStop();
+			case 3:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.left();ArUtil::sleep(25);break;
+			case 4:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.right();ArUtil::sleep(25);break;
+			case 5:client.requestOnce("stop");ArUtil::sleep(25);flag=0;break;  //inputHandler.doStop();
 			case 13:client.requestOnce("localizeToPose");flag=0;break; // for mobileSim use ONLY
 			
 			case 20:zoomMap=zoomMap-20;flag=0;break; // zoom +
@@ -691,7 +689,7 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			case 24:shiftX=shiftX-2000;flag=0;break; // left
 			case 25:shiftX=shiftX+2000;flag=0;break; // right
 
-			case 30:client.requestOnce("getGoals");flag=0;break;
+			//case 30:client.requestOnce("getGoals");flag=0;break;
 			case 99:client.disconnect();flag=0;break; // disconnect from server
 			}
 		
@@ -790,6 +788,13 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			outside_4:
 			flag=0;
 			}
+
+			/* start CMCC tasks */
+			if(flag==31)
+			{
+			goto yu;
+			}
+			yu:
 			
 		ArUtil::sleep(50); // set sleep time here to avoid use of too much CPU resource
 		}
@@ -838,7 +843,7 @@ void CChinaMobileDlg::OnBnClickedButton1()
 	UpdateData(true);
 	//m_temp += strx;
 	Global_IP = strx;
-	m_temp += "Connected to " + strx + " successfully! \r\n";
+	m_temp += "Connected to:  \r\n" + strx + " \r\n" + "successfully!";
 	m_log.SetWindowText(m_temp);
 	m_log.LineScroll(m_log.GetLineCount());
 	UpdateData(false);
@@ -939,15 +944,10 @@ void CChinaMobileDlg::OnBnClickedCancel()
 }
 
 
-void CChinaMobileDlg::OnBnClickedButton16()
-{
-	selectMap=1; // static map
-}
-
-
 void CChinaMobileDlg::OnBnClickedButton17()
 {
-	selectLaser=1; // current map
+	CDialogEx::OnCancel(); // exit this application
+	//selectLaser=1; // current map
 }
 
 
@@ -991,8 +991,32 @@ void CChinaMobileDlg::OnBnClickedButton10()
 
 void CChinaMobileDlg::OnBnClickedButton23()
 {
-	flag=30; // show goal name list
+	//flag=30; // show goal name list
 	CString g_info;
-	g_info="GOAL LIST: " + Goal_list + " __ END";
+	g_info="GOAL LIST: \r\n" + Goal_list + " __ END";
 	m_log.SetWindowText(g_info);
+}
+
+
+void CChinaMobileDlg::OnBnClickedButton25()
+{
+	taskDlg *dlg2 = new taskDlg;  // new dialog for CMCC tasks
+	dlg2->Create(IDD_DIALOG2);     
+	dlg2->ShowWindow(SW_SHOW);
+}
+
+
+void CChinaMobileDlg::OnBnClickedButton16()
+{
+	flag=31; // CMCC task starts
+
+	CString strText,taskGoal;
+	int TaskNo=0;
+	//int nLineCount = m_goal.GetLineCount(); //m_myEdit是与edit控件关联的变量
+	
+	int len = m_goal.LineLength(m_goal.LineIndex(TaskNo));
+	m_goal.GetLine(TaskNo, strText.GetBuffer(len), len);
+	taskGoal = strText.GetBuffer(len);
+	strText.ReleaseBuffer(len);
+	
 }

@@ -1,5 +1,5 @@
 /* ------------------------------------------------------- *
- * Last modification date 2015/3/24 17:49  by: Xiaoxi Gong *
+ * Last modification date 2015/3/25 01:27  by: Xiaoxi Gong *
  * ------------------------------------------------------- *
 */
 /*#define CRTDBG_MAP_ALLOC
@@ -691,10 +691,10 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 		{
 			ArNetPacket pkt, pkt_goal;
 			switch(flag){
-			case 1:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.up();ArUtil::sleep(50);break;
-			case 2:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.down();ArUtil::sleep(50);break;
-			case 3:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.left();ArUtil::sleep(25);break;
-			case 4:if(GetAsyncKeyState(VK_LBUTTON)&0x8000)inputHandler.right();ArUtil::sleep(25);break;
+			case 1:inputHandler.up();ArUtil::sleep(100);break;  //if(GetAsyncKeyState(VK_LBUTTON)&0x8000)
+			case 2:inputHandler.down();ArUtil::sleep(100);break;
+			case 3:inputHandler.left();ArUtil::sleep(200);break;
+			case 4:inputHandler.right();ArUtil::sleep(200);break;
 			case 5:client.requestOnce("stop");ArUtil::sleep(25);flag=0;break;  //inputHandler.doStop();
 			case 13:client.requestOnce("localizeToPose");flag=0;break; // for mobileSim use ONLY
 			
@@ -904,27 +904,29 @@ void CChinaMobileDlg::OnBnClickedButton17()
 //---------------------//
 
 
+//--- This part has been rewritten ---//
 void CChinaMobileDlg::OnBnClickedButton3()
 {
-	flag=1; // forward
+	//flag=1; // forward
 }
 
 
 void CChinaMobileDlg::OnBnClickedButton4()
 {
-	flag=2; // backward
+	//flag=2; // backward
 }
 
 void CChinaMobileDlg::OnBnClickedButton5()
 {
-	flag=3; // turn left
+	//flag=3; // turn left
 }
 
 
 void CChinaMobileDlg::OnBnClickedButton6()
 {
-	flag=4; //turn right
+	//flag=4; //turn right
 }
+//----------------------//
 
 
 void CChinaMobileDlg::OnBnClickedButton7()
@@ -1061,3 +1063,46 @@ void CChinaMobileDlg::OnBnClickedButton16()
 		strText.ReleaseBuffer(len);
 		}
 }
+
+
+//--- overload @PreTranslateMessage@ can implement buttonDown & buttonUp functions ---//
+BOOL CChinaMobileDlg::PreTranslateMessage(MSG* pMsg)
+{
+	//--- 按钮按下 或者 方向键按下 ---//
+	if(pMsg->message == WM_LBUTTONDOWN || pMsg->message==WM_KEYDOWN)
+	{
+		if(pMsg->hwnd == GetDlgItem(IDC_BUTTON3)->m_hWnd || pMsg->wParam == VK_UP) 
+		{
+		flag=1;  // move FORWARD
+		}
+
+		if(pMsg->hwnd == GetDlgItem(IDC_BUTTON4)->m_hWnd || pMsg->wParam == VK_DOWN)
+		{
+		flag=2; // move BACKWARD
+		}
+
+		if(pMsg->hwnd == GetDlgItem(IDC_BUTTON5)->m_hWnd || pMsg->wParam == VK_LEFT)
+		{
+		flag=3; // turn LEFT
+		}
+
+		if(pMsg->hwnd == GetDlgItem(IDC_BUTTON6)->m_hWnd || pMsg->wParam == VK_RIGHT)
+		{
+		flag=4; // turn RIGHT
+		}
+	}
+
+	//--- 按钮弹起 或者 方向键弹起 ---//
+	else if(pMsg->message == WM_LBUTTONUP || pMsg->message==WM_KEYUP) // 按钮弹起
+	{
+		if(pMsg->hwnd == GetDlgItem(IDC_BUTTON3)->m_hWnd || pMsg->hwnd == GetDlgItem(IDC_BUTTON4)->m_hWnd || 
+			pMsg->hwnd == GetDlgItem(IDC_BUTTON5)->m_hWnd || pMsg->hwnd == GetDlgItem(IDC_BUTTON6)->m_hWnd ||
+			pMsg->wParam == VK_UP || pMsg->wParam == VK_DOWN || pMsg->wParam == VK_LEFT || pMsg->wParam == VK_RIGHT)
+		{
+		flag=5; 
+		}
+	}
+
+	return CDialogEx::PreTranslateMessage(pMsg);
+}
+//-------------------------------------------//

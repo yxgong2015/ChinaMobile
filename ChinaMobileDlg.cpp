@@ -1,5 +1,5 @@
 /* ------------------------------------------------------- *
- * Last modification date 2015/3/23 19:13  by: Xiaoxi Gong *
+ * Last modification date 2015/3/24 17:49  by: Xiaoxi Gong *
  * ------------------------------------------------------- *
 */
 /*#define CRTDBG_MAP_ALLOC
@@ -28,14 +28,13 @@
 #define TM 50
 #endif
 
-int flag=0,laserReadingNo=0,laserReadingX[512],laserReadingY[512],selectMap=1,selectLaser=1;
-//int pathReadingNo=0,pathReadingX[128],pathReadingY[128];
+int flag=0,tFlag=0,laserReadingNo=0,laserReadingX[512],laserReadingY[512],pathReadingNo=0,pathReadingX[256],pathReadingY[256];
 double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,mousePoseX=0,mousePoseY=0,localScore=0;
 float zoomMap=0,shiftX=0,shiftY=0,robot_Th=0, windowMinX=3,windowMinY=4, windowMaxX=481,windowMaxY=371;
 bool safedrive=0;
+char ls_handler;
 
-
-CString Global_IP,Warning,Goal_name,Goal_list,loalStatus,map_name;
+CString Global_IP,Warning,Goal_name,Goal_list,local_Status,map_name,task_Goal;
 std::vector<ArLineSegment> sMap;
 
 
@@ -178,7 +177,7 @@ BOOL CChinaMobileDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
-	SetTimer(1, TM, NULL);  // set TIMER 
+	SetTimer(1, TM*4, NULL);  // set TIMER 
 	m_IP.SetAddress(192,168,244,128);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -234,36 +233,43 @@ HCURSOR CChinaMobileDlg::OnQueryDragIcon()
 }
 
 
-//---------------------- Draw server MAP ----------------------//
+//------------------ Draw MAP & laser points -------------------//
 void CChinaMobileDlg::drawServerMap(CDC *pDC, CRect &rectPicture)
 {
+	/* define all objects following */
 	using std::vector;
-	float serverMapX1=0,serverMapX2=0,serverMapY1=0,serverMapY2=0,botX=0,botY=0;
-	CPen newPen;       
-	CPen *pOldPen;    
+	float serverMapX1=0,serverMapX2=0,serverMapY1=0,serverMapY2=0, patX1=0,patY1=0,currentLaserX1=0,currentLaserY1=0;
+	double headX1=0,headY1=0,headX2=0,headY2=0;
+	//float currentLaserX2=0,currentLaserY2=0,originX=0,originY=0,patX2=0,patY2=0;
+	
+	/* ------------------------- *
+	 * draw static MAP on screen *
+	 * ------------------------- *
+	*/
+	CPen newPen, newPen_bot, newPen_lsr, newPen_path;      // 用于创建新画笔  
+	CPen *pOldPen, *pOldPen_bot, *pOldPen_lsr, *pOldPen_path;  // 用于存放旧画笔
 	CBrush newBrush;   
 	CBrush *pOldBrush;  
-	ArMap armap;             
+
+	ArMap armap;      
 	char* oldMapName = "2D_MAP.map";
 	armap.readFile(oldMapName);
-
 	newBrush.CreateSolidBrush(RGB(255,255,255));   
 	pOldBrush = pDC->SelectObject(&newBrush);   
 	pDC->Rectangle(rectPicture);   
 	pDC->SelectObject(pOldBrush);   
 	newBrush.DeleteObject();
-	//DeleteObject(newBrush.m_hObject);
 
-	newPen.CreatePen(PS_SOLID, 1, RGB(0,0,0));     
+	newPen.CreatePen(PS_SOLID, 1.3, RGB(0,0,0));     
 	pOldPen = pDC->SelectObject(&newPen); 
 
 		for(vector<ArLineSegment>::iterator it = armap.getLines()->begin();it != armap.getLines()->end();it++)
 		{ 
 
-		serverMapX1 = ((*it).getX1()+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
-		serverMapY1 = ((*it).getY1()+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
-		serverMapX2 =((*it).getX2()+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
-		serverMapY2 = ((*it).getY2()+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
+		serverMapX1 = ((*it).getX1()+(19000)+shiftX)/(100+zoomMap);
+		serverMapY1 = ((*it).getY1()+(19000)+shiftY)/(100+zoomMap);
+		serverMapX2 =((*it).getX2()+(19000)+shiftX)/(100+zoomMap);
+		serverMapY2 = ((*it).getY2()+(19000)+shiftY)/(100+zoomMap);
 
 			if(serverMapX1<windowMaxX && serverMapX2<windowMaxX && serverMapX1>windowMinX && serverMapX2>windowMinX 
 				&& serverMapY1<windowMaxY && serverMapY2<windowMaxY && serverMapY1>windowMinY && serverMapY2>windowMinY)
@@ -277,62 +283,20 @@ void CChinaMobileDlg::drawServerMap(CDC *pDC, CRect &rectPicture)
 	pDC->SelectObject(pOldPen);   
 	newPen.DeleteObject(); 
 	//DeleteObject(newPen.m_hObject); 
-	ReleaseDC(pDC);
-}
-//--------------//
 
 
-//-------------------- Draw laser current MAP --------------------//
-void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
-{
-	float currentLaserX1=0,currentLaserX2=0,currentLaserY1=0,currentLaserY2=0,originX=0,originY=0;
-	//float patX1=0,patY1=0,patX2=0,patY2=0,botX=0,botY=0;
-	double headX1=0,headY1=0,headX2=0,headY2=0;
-
-	/* draw current laser MAP */
-	CPen newPen_lsr;   // 用于创建新画笔   
-	CPen *pOldPen_lsr; // 用于存放旧画笔   
-	newPen_lsr.CreatePen(PS_DOT, 2, RGB(0,249,0)); // 创建实心画笔，粗度为2，颜色为绿色    
-	pOldPen_lsr = pDC->SelectObject(&newPen_lsr); // 选择新画笔，并将旧画笔的指针保存到pOldPen 
-
-	originX = (19000+shiftX*selectMap)/(100+zoomMap*selectMap);
-	originY = (19000+shiftY*selectMap)/(100+zoomMap*selectMap);
-
-		for(int t=0;t<laserReadingNo;t++)
-		{
-		currentLaserX1 = (laserReadingX[t]+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
-		currentLaserY1 = (laserReadingY[t]+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
-		currentLaserX2 = (laserReadingX[t+1]+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
-		currentLaserY2 = (laserReadingY[t+1]+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
-	
-			if(currentLaserX1<windowMaxX && currentLaserX2<windowMaxX && currentLaserX1>windowMinX && currentLaserX2>windowMinX && 
-				currentLaserY1<windowMaxY && currentLaserY2<windowMaxY && currentLaserY1>windowMinY && currentLaserY2>windowMinY)
-			{
-			    /* avoid (0, 0, 0.0) point be plotted on the screen */
-				if(currentLaserX1!=originX && currentLaserX2!=originX && 
-					currentLaserY1!=originY && currentLaserY2!=originY)
-				{
-				pDC->MoveTo(currentLaserX1, currentLaserY1);
-				pDC->LineTo(currentLaserX2, currentLaserY2); 
-				}
-			}
-		}  
-
-	pDC->SelectObject(pOldPen_lsr); // 恢复旧画笔  
-	newPen_lsr.DeleteObject(); // 删除新画笔
-
-
-    /* draw current robot position on MAP */
-	CPen newPen_bot;    // 用于创建新画笔   
-	CPen *pOldPen_bot;  // 用于存放旧画笔    
-	newPen_bot.CreatePen(PS_SOLID, 5.5, RGB(255,0,0)); // 创建实心画笔，粗度为4.5，颜色为red   
+	/* ---------------------------------- *
+	 * draw current robot position on MAP *
+	 * ---------------------------------- *
+	*/
+	newPen_bot.CreatePen(PS_SOLID, 5.5, RGB(255,0,0)); // 创建实心画笔，粗度为5.5，颜色为red   
 	pOldPen_bot = pDC->SelectObject(&newPen_bot);    // 选择新画笔，并将旧画笔的指针保存到pOldPen 
 
-	/* robot towards the direction based on tempA value */
-	headX1 = (tempX+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
-	headY1 = (tempY+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
-	headX2 = ((tempX+250*cos(tempA/180*3.1416))+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap); 
-	headY2 = ((tempY+250*sin(tempA/180*3.1416))+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
+	//--- robot towards the direction based on tempA value ---//
+	headX1 = (tempX+(19000)+shiftX)/(100+zoomMap);
+	headY1 = (tempY+(19000)+shiftY)/(100+zoomMap);
+	headX2 = ((tempX+250*cos(tempA/180*3.1416))+(19000)+shiftX)/(100+zoomMap); 
+	headY2 = ((tempY+250*sin(tempA/180*3.1416))+(19000)+shiftY)/(100+zoomMap);
 
 		if(headX1<windowMaxX && headX1>windowMinX && headX2<windowMaxX && headX1>windowMinX &&
 			headY1<windowMaxY && headY1>windowMinY && headY2<windowMaxY && headY2>windowMinY)
@@ -345,37 +309,84 @@ void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
 	newPen_bot.DeleteObject(); 
 
 
-	/* path planning to the goal */
-	/*CPen newPen_path;     
-	CPen *pOldPen_path;      
-	newPen_path.CreatePen(PS_SOLID, 2.5, RGB(0,0,229));    
+	/* ------------------------------ *
+	 * draw current laser data on MAP *
+	 * ------------------------------ *
+	*/
+	newPen_lsr.CreatePen(PS_DASH, 3, RGB(0,249,0)); // 创建实心画笔，粗度为2，颜色为绿色    
+	pOldPen_lsr = pDC->SelectObject(&newPen_lsr); // 选择新画笔，并将旧画笔的指针保存到pOldPen 
+	//originX = (19000+shiftX)/(100+zoomMap);
+	//originY = (19000+shiftY)/(100+zoomMap);
+
+		for(int t=0;t<laserReadingNo;t++)
+		{
+		currentLaserX1 = (laserReadingX[t]+(19000)+shiftX)/(100+zoomMap);
+		currentLaserY1 = (laserReadingY[t]+(19000)+shiftY)/(100+zoomMap);
+		//currentLaserX2 = (laserReadingX[t+1]+(19000)+shiftX)/(100+zoomMap);
+		//currentLaserY2 = (laserReadingY[t+1]+(19000)+shiftY)/(100+zoomMap);
+	
+			//if(currentLaserX1<windowMaxX && currentLaserX2<windowMaxX && currentLaserX1>windowMinX && currentLaserX2>windowMinX && 
+				//currentLaserY1<windowMaxY && currentLaserY2<windowMaxY && currentLaserY1>windowMinY && currentLaserY2>windowMinY)
+			if(currentLaserX1<windowMaxX && currentLaserX1>windowMinX && 
+				currentLaserY1<windowMaxY && currentLaserY1>windowMinY)
+			{
+			    //--- avoid (0, 0, 0.0) point be plotted on the screen ---//
+				//if(currentLaserX1!=originX && currentLaserX2!=originX && 
+					//currentLaserY1!=originY && currentLaserY2!=originY)
+				//if(currentLaserX1!=originX && currentLaserY1!=originY)
+				//{
+				pDC->MoveTo(currentLaserX1, currentLaserY1);
+				pDC->LineTo(currentLaserX1, currentLaserY1); 
+				//}
+			}
+		}  
+
+	pDC->SelectObject(pOldPen_lsr); // 恢复旧画笔  
+	newPen_lsr.DeleteObject(); // 删除新画笔
+
+
+	/* ------------------------- *
+	 * path planning to the goal *
+	 * ------------------------- *
+	*/     
+	newPen_path.CreatePen(PS_DOT, 3, RGB(0,0,229));    
 	pOldPen_path = pDC->SelectObject(&newPen_path);   
 
 	for(int pt=0;pt<pathReadingNo;pt++)
 	{
-	patX1 = (pathReadingX[pt]+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
-	patY1 = (pathReadingY[pt]+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
-	patX2 = (pathReadingX[pt+1]+(19000)+shiftX*selectMap)/(100+zoomMap*selectMap);
-	patY2 = (pathReadingY[pt+1]+(19000)+shiftY*selectMap)/(100+zoomMap*selectMap);
+	patX1 = (pathReadingX[pt]+(19000)+shiftX)/(100+zoomMap);
+	patY1 = (pathReadingY[pt]+(19000)+shiftY)/(100+zoomMap);
+	//patX2 = (pathReadingX[pt+1]+(19000)+shiftX)/(100+zoomMap);
+	//patY2 = (pathReadingY[pt+1]+(19000)+shiftY)/(100+zoomMap);
 
-		if(patX1<windowMaxX && patX1>windowMinX && patY1<windowMaxY && patY1>windowMinY &&
-			patX2<windowMaxX && patX2>windowMinX && patY2<windowMaxY && patY2>windowMinY)
+		//if(patX1<windowMaxX && patX1>windowMinX && patY1<windowMaxY && patY1>windowMinY &&
+			//patX2<windowMaxX && patX2>windowMinX && patY2<windowMaxY && patY2>windowMinY)
+
+		if(patX1<windowMaxX && patY1<windowMaxY && patX1>windowMinX && patY1>windowMinY)
 		{
-			if(patX1!=originX && patX2!=originX && 
-				patY1!=originY && patY2!=originY)
-			{
+			//if(patX1!=originX && patX2!=originX && 
+				//patY1!=originY && patY2!=originY)
+			//{
 			pDC->MoveTo(patX1, patY1);
-			pDC->LineTo(patX2, patY2); 
+			pDC->LineTo(patX1, patY1); 
 			//pDC->SetPixel(patX1, patY1, RGB(0,0,229));
-			//pDC->SetPixel(patX1, patY1, RGB(0,0,229));
-			}
+			//pDC->SetPixel(patX2, patY2, RGB(0,0,229));
+			//}
 		}
 	}
 	pDC->SelectObject(pOldPen_path);   
-	newPen_path.DeleteObject(); */
+	newPen_path.DeleteObject(); 
 
 	ReleaseDC(pDC);
 }
+//--------------//
+
+
+//-------------------- Reserved --------------------//
+/*void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture)
+{
+	
+}*/
 //--------------//
 
 
@@ -451,7 +462,8 @@ void pathPlannerStatus(ArNetPacket* packet)
 	memset(localStatus,0,sizeof(localStatus));
 	packet->bufToStr(localStatus, sizeof(localStatus));
 	fflush(stdout);
-	loalStatus=localStatus;
+	local_Status=localStatus;
+	ls_handler=localStatus[0];
 }
 //----------------------//
 
@@ -498,6 +510,7 @@ void laserCurrent(ArNetPacket* packet)
 		laserReadingY[i] = laserY;
 		}
 	fflush(stdout);
+	//ArUtil::sleep(25);
 }
 //--------------//
 
@@ -521,24 +534,25 @@ void getGoals(ArNetPacket* packet)
 
 
 //------ Get path points ------//
-/*void getPath(ArNetPacket* packet)
+void getPath(ArNetPacket* packet)
 {
 	int pathX=0,pathY=0;
 	memset(pathReadingX, 0, sizeof(pathReadingX));
 	memset(pathReadingY, 0, sizeof(pathReadingY));
 
 	pathReadingNo=packet->bufToByte2();
-	pathX=packet->bufToByte4();
-	pathY=packet->bufToByte4();
 
 		for(int p=0;p<pathReadingNo;p++)
 		{
-		pathReadingX[p]=pathX;
-		pathReadingY[p]=pathY;
+		pathX = packet->bufToByte4();  // path points for X
+		pathY = packet->bufToByte4();  // path points for Y
+
+		pathReadingX[p] = pathX;
+		pathReadingY[p] = pathY;
 		}
 
 	fflush(stdout);
-}*/
+}
 //--------------//
 
 
@@ -557,8 +571,8 @@ void CChinaMobileDlg::OnLButtonDblClk()
 
 	mouseX = pointP.x;
 	mouseY = pointP.y;
-	mousePoseX= (mouseX-5)*(100+zoomMap*selectMap)-(19000+shiftX*selectMap);
-	mousePoseY= (mouseY-22)*(100+zoomMap*selectMap)-(19000+shiftY*selectMap);
+	mousePoseX= (mouseX-5)*(100+zoomMap)-(19000+shiftX);
+	mousePoseY= (mouseY-22)*(100+zoomMap)-(19000+shiftY);
 	ArUtil::sleep(50);
 }
 //-----------------//
@@ -654,22 +668,24 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	ArGlobalFunctor1<ArNetPacket *> getGoalsCB(&getGoals);
 	client.addHandler("getGoals",&getGoalsCB);
 
-	/*ArGlobalFunctor1<ArNetPacket *> getPathCB(&getPath);
-	client.addHandler("getPath",&getPathCB);*/
+	ArGlobalFunctor1<ArNetPacket *> getPathCB(&getPath);
+	client.addHandler("getPath",&getPathCB);
 
 	/* sending requests to server */
 	client.requestOnce("getMapName");
 
 	client.requestOnce("getGoals");
 
-	client.request("update",TM); 
+	client.request("update",TM+1); 
 
-	client.request("getLocState",TM);
+	client.request("getLocState",TM+2);
 
-	client.request("pathPlannerStatus",TM);
+	client.request("pathPlannerStatus",TM+3);
 	
 	requestPacket.strToBuf("sim_S3Series_1"); // sim_S3Series_1 for mobileSim use only
-	client.request("getSensorCurrent",TM*2,&requestPacket); 
+	client.request("getSensorCurrent",TM+4,&requestPacket); 
+
+	client.request("getPath",TM*4);
 
 		while(client.getRunningWithLock())
 		{
@@ -747,7 +763,6 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			/* goto a specify point/goal */
 			if(flag==11)
 			{
-			//ArNetPacket pkt_goal;
 			pkt_goal.strToBuf(Goal_name); // Goal_name
 			client.requestOnce("gotoGoal",&pkt_goal);
 				while(1)
@@ -768,7 +783,6 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			client.requestOnce("gotoPose",&pkt);
 				while(1)
 				{
-				//client.requestOnce("getPath");
 				ArUtil::sleep(200);
 				if(flag==5)goto outside_3;
 				}
@@ -788,18 +802,29 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			outside_4:
 			flag=0;
 			}
-
-			/* start CMCC tasks */
+			
+			/* start CMCC task trigger */
 			if(flag==31)
 			{
-			goto yu;
+			ArNetPacket taskReq;
+
+			taskReq.strToBuf(task_Goal);
+			client.requestOnce("gotoGoal",&taskReq);
+				while(1)
+				{
+				ArUtil::sleep(500);
+				if(ls_handler!='G' && ls_handler!='C' && ls_handler!='F') goto outside_tk;
+				}
+			outside_tk:
+			client.requestOnce("stop");
+			tFlag=99; // trick the tasks
+			flag=0;
 			}
-			yu:
 			
-		ArUtil::sleep(50); // set sleep time here to avoid use of too much CPU resource
+		ArUtil::sleep(25); // set sleep time here to avoid use of too much CPU resource
 		}
 }
-//-------------------//
+//---------------------//
 
 
 //---------- Refresh real time data ----------//
@@ -814,20 +839,32 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 	m_px = mousePoseX;
 	m_py = mousePoseY;
 	m_score=localScore;
-	m_status=loalStatus;
+	m_status=local_Status;
 	m_mapName=map_name;
 	UpdateData(false);
 
 	CRect rectPicture;   
 	/* 客户区坐标以窗口的左上角为原点，这区别于以屏幕左上角为原点的屏幕坐标 */ 
 	m_serverMap.GetClientRect(&rectPicture);
-	drawServerMap(m_serverMap.GetDC(), rectPicture); // draw server MAP on client
-	drawLaserCurrent(m_serverMap.GetDC(), rectPicture);  // draw current laser points on client
+	drawServerMap(m_serverMap.GetDC(), rectPicture); // draw server MAP & current laser on client
+	//drawLaserCurrent(m_serverMap.GetDC(), rectPicture);
 
 	if(m_safeDrive.GetCheck()){safedrive=true;}
 	else{safedrive=false;}
 	if(flag==12 || flag==14){OnLButtonDblClk();}
 	if(flag==11){m_goal.GetWindowText(Goal_name);}
+
+	//--- wait for robot reaching to goal ---//
+	if(ls_handler!='G' && ls_handler!='F' && tFlag==99)
+	{
+	tFlag=0;
+	//--- if reach the goal, robot starts following CMCC tasks ---//
+	ShellExecute(this->m_hWnd,"open","http://www.baidu.com","","", SW_SHOW );
+	//--- task end ---//
+	goto outTask;
+	}
+	outTask:
+
 	CDialogEx::OnTimer(nIDEvent);
 }
 //----------------------------//
@@ -857,6 +894,14 @@ void CChinaMobileDlg::OnBnClickedButton2()
 	flag=99;
 }
 //-------//
+
+
+//------------ Exit program ------------//
+void CChinaMobileDlg::OnBnClickedButton17()
+{
+	CDialogEx::OnCancel();
+}
+//---------------------//
 
 
 void CChinaMobileDlg::OnBnClickedButton3()
@@ -944,13 +989,6 @@ void CChinaMobileDlg::OnBnClickedCancel()
 }
 
 
-void CChinaMobileDlg::OnBnClickedButton17()
-{
-	CDialogEx::OnCancel(); // exit this application
-	//selectLaser=1; // current map
-}
-
-
 void CChinaMobileDlg::OnBnClickedButton18()
 {
 	flag=22; // up
@@ -1010,13 +1048,16 @@ void CChinaMobileDlg::OnBnClickedButton16()
 {
 	flag=31; // CMCC task starts
 
-	CString strText,taskGoal;
-	int TaskNo=0;
-	//int nLineCount = m_goal.GetLineCount(); //m_myEdit是与edit控件关联的变量
+	//--- following program can capture every line's text in Edit Ccontrol ---//
+	CString strText;
+	int TaskNo=0, nLineCount = m_goal.GetLineCount();
 	
-	int len = m_goal.LineLength(m_goal.LineIndex(TaskNo));
-	m_goal.GetLine(TaskNo, strText.GetBuffer(len), len);
-	taskGoal = strText.GetBuffer(len);
-	strText.ReleaseBuffer(len);
-	
+		for(TaskNo=0;TaskNo<nLineCount;TaskNo++)
+		{
+		int len = m_goal.LineLength(m_goal.LineIndex(TaskNo));
+		m_goal.GetLine(TaskNo, strText.GetBufferSetLength(len), len);
+		task_Goal = strText.GetBuffer(len);
+
+		strText.ReleaseBuffer(len);
+		}
 }

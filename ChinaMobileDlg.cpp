@@ -1,5 +1,5 @@
 /* ------------------------------------------------------- *
- * Last modification date 2015/3/25 01:27  by: Xiaoxi Gong *
+ * Last modification date 2015/3/25 14:04  by: Xiaoxi Gong *
  * ------------------------------------------------------- *
 */
 /*#define CRTDBG_MAP_ALLOC
@@ -25,16 +25,17 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#define TM 50
+#define TM 50 
 #endif
 
-int flag=0,tFlag=0,laserReadingNo=0,laserReadingX[512],laserReadingY[512],pathReadingNo=0,pathReadingX[256],pathReadingY[256];
+int laserReadingNo=0,laserReadingX[512],laserReadingY[512],pathReadingNo=0,pathReadingX[256],pathReadingY[256];
+int flag=0,tFlag=0,PWM=100;
 double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,mousePoseX=0,mousePoseY=0,localScore=0;
 float zoomMap=0,shiftX=0,shiftY=0,robot_Th=0, windowMinX=3,windowMinY=4, windowMaxX=481,windowMaxY=371;
 bool safedrive=0;
 char ls_handler;
 
-CString Global_IP,Warning,Goal_name,Goal_list,local_Status,map_name,task_Goal;
+CString Global_IP,Warning,Goal_name,Goal_list,local_Status,map_name,task_Goal,scan_MapName;
 std::vector<ArLineSegment> sMap;
 
 
@@ -76,6 +77,7 @@ END_MESSAGE_MAP()
 
 CChinaMobileDlg::CChinaMobileDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CChinaMobileDlg::IDD, pParent)
+	, m_speedDisplay(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_Velocity = 0.0;
@@ -108,6 +110,9 @@ void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT10, m_score);
 	DDX_Text(pDX, IDC_EDIT11, m_status);
 	DDX_Text(pDX, IDC_EDIT12, m_mapName);
+	DDX_Control(pDX, IDC_EDIT14, m_scanMapName);
+	DDX_Control(pDX, IDC_SLIDER1, m_speedCtrl);
+	DDX_Text(pDX, IDC_EDIT15, m_speedDisplay);
 }
 
 	BEGIN_MESSAGE_MAP(CChinaMobileDlg, CDialogEx)
@@ -142,6 +147,11 @@ void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
 	ON_BN_CLICKED(IDC_BUTTON23, &CChinaMobileDlg::OnBnClickedButton23)
 	ON_BN_CLICKED(IDC_BUTTON25, &CChinaMobileDlg::OnBnClickedButton25)
 	ON_BN_CLICKED(IDC_BUTTON16, &CChinaMobileDlg::OnBnClickedButton16)
+	ON_BN_CLICKED(IDC_BUTTON26, &CChinaMobileDlg::OnBnClickedButton26)
+	ON_BN_CLICKED(IDC_BUTTON27, &CChinaMobileDlg::OnBnClickedButton27)
+	ON_BN_CLICKED(IDC_BUTTON24, &CChinaMobileDlg::OnBnClickedButton24)
+	ON_NOTIFY(NM_CUSTOMDRAW, IDC_SLIDER1, &CChinaMobileDlg::OnNMCustomdrawSlider1)
+	ON_EN_CHANGE(IDC_EDIT15, &CChinaMobileDlg::OnEnChangeEdit15)
 	END_MESSAGE_MAP()
 
 
@@ -179,6 +189,9 @@ BOOL CChinaMobileDlg::OnInitDialog()
 	// TODO: 在此添加额外的初始化代码
 	SetTimer(1, TM*4, NULL);  // set TIMER 
 	m_IP.SetAddress(192,168,244,128);
+
+	m_speedCtrl.SetRange(0,200); //设置滑块位置的最大值和最小值
+	m_speedCtrl.SetPos(100);     //设置滑块的默认当前位置
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -689,12 +702,13 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 
 		while(client.getRunningWithLock())
 		{
-			ArNetPacket pkt, pkt_goal;
+			ArNetPacket pkt, pkt_goal, pkt_map;
+
 			switch(flag){
-			case 1:inputHandler.up();ArUtil::sleep(100);break;  //if(GetAsyncKeyState(VK_LBUTTON)&0x8000)
-			case 2:inputHandler.down();ArUtil::sleep(100);break;
-			case 3:inputHandler.left();ArUtil::sleep(200);break;
-			case 4:inputHandler.right();ArUtil::sleep(200);break;
+			case 1:inputHandler.up();ArUtil::sleep(PWM);break;  //if(GetAsyncKeyState(VK_LBUTTON)&0x8000)
+			case 2:inputHandler.down();ArUtil::sleep(PWM);break;
+			case 3:inputHandler.left();ArUtil::sleep(PWM*2);break;
+			case 4:inputHandler.right();ArUtil::sleep(PWM*2);break;
 			case 5:client.requestOnce("stop");ArUtil::sleep(25);flag=0;break;  //inputHandler.doStop();
 			case 13:client.requestOnce("localizeToPose");flag=0;break; // for mobileSim use ONLY
 			
@@ -705,7 +719,16 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 			case 24:shiftX=shiftX-2000;flag=0;break; // left
 			case 25:shiftX=shiftX+2000;flag=0;break; // right
 
-			//case 30:client.requestOnce("getGoals");flag=0;break;
+			case 40:pkt_map.strToBuf(scan_MapName);
+					client.requestOnce("mappingStart",&pkt_map);  // start mapping
+					ArUtil::sleep(500);
+					flag=0;
+					break; 
+			case 41:client.requestOnce("mappingEnd");  // finish mapping
+					ArUtil::sleep(500);
+					flag=0;
+					break; 
+
 			case 99:client.disconnect();flag=0;break; // disconnect from server
 			}
 		
@@ -1015,6 +1038,20 @@ void CChinaMobileDlg::OnBnClickedButton21()
 }
 
 
+void CChinaMobileDlg::OnBnClickedButton26()
+{
+	//m_goal.GetWindowText(scan_MapName);
+	m_scanMapName.GetWindowText(scan_MapName);
+	flag=40; // start scan
+}
+
+
+void CChinaMobileDlg::OnBnClickedButton27()
+{
+	flag=41; // finish scan
+}
+
+
 void CChinaMobileDlg::OnBnClickedButton22()
 {
 	zoomMap=0,shiftX=0,shiftY=0; // reset map size
@@ -1044,6 +1081,35 @@ void CChinaMobileDlg::OnBnClickedButton25()
 	dlg2->Create(IDD_DIALOG2);     
 	dlg2->ShowWindow(SW_SHOW);
 }
+
+
+void CChinaMobileDlg::OnBnClickedButton24()
+{
+	// camera stream
+}
+
+
+void CChinaMobileDlg::OnEnChangeEdit15()
+{
+
+}
+
+
+//-------------------------- Slider control bar --------------------------//
+void CChinaMobileDlg::OnNMCustomdrawSlider1(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
+	// TODO: 在此添加控件通知处理程序代码
+	*pResult = 0;
+
+	int nPos = m_speedCtrl.GetPos(); //获得滑块的当前位置
+	PWM=nPos;
+   //--- 另外做一个编辑框 显示所调节的数据 ---//
+	CString str="";
+	str.Format("%d%%",nPos/2);
+	SetDlgItemText(IDC_EDIT15,str);
+}
+//------------------------------//
 
 
 void CChinaMobileDlg::OnBnClickedButton16()

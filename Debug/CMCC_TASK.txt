@@ -1,0 +1,48 @@
+2015_04_23_16:49:41
+Arriving to: 
+2
+sending POST to server...
+login ...
+login FAILD!
+status 500
+license state 0
+user state 0
+
+
+report status ERROR!
+
+testing ERROR!
+
+ending ERROR!
+2015_04_23_16:51:37
+Arriving to: 
+5
+sending POST to server...
+login ...
+login FAILD!
+status 500
+license state 0
+user state 0
+
+
+report status ERROR!
+
+testing ERROR!
+
+ending ERROR!
+2015_04_23_17:03:35
+Arriving to: 
+1
+sending POST to server...
+login ...
+login FAILD!
+status 500
+license state 0
+user state 0
+
+
+report status ERROR!
+
+testing ERROR!
+
+ending ERROR!

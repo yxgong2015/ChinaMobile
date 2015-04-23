@@ -1,0 +1,185 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="json">
+      <UniqueIdentifier>{553eed54-feae-48cb-b444-f570844e541d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="json\json_cpp">
+      <UniqueIdentifier>{e67fabf7-736a-477a-b320-3006d0502984}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="json\json_lib">
+      <UniqueIdentifier>{2b5cff18-25d2-457a-a0b9-badc9a4ff9d6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+    <None Include="res\ChinaMobile.rc2">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="res\ChinaMobile.ico">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="JsonLib\json_cpp\json_internalarray.inl">
+      <Filter>json\json_cpp</Filter>
+    </None>
+    <None Include="JsonLib\json_cpp\json_internalmap.inl">
+      <Filter>json\json_cpp</Filter>
+    </None>
+    <None Include="JsonLib\json_cpp\json_valueiterator.inl">
+      <Filter>json\json_cpp</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ChinaMobile.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ChinaMobileDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="robot.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MapDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="taskDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="cameraCanon.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_cpp\autolink.h">
+      <Filter>json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_cpp\config.h">
+      <Filter>json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_cpp\features.h">
+      <Filter>json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_cpp\forwards.h">
+      <Filter>json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_cpp\json.h">
+      <Filter>json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_cpp\json_batchallocator.h">
+      <Filter>json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_cpp\reader.h">
+      <Filter>json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_cpp\value.h">
+      <Filter>json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_cpp\writer.h">
+      <Filter>json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_lib\arraylist.h">
+      <Filter>json\json_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_lib\bits.h">
+      <Filter>json\json_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_lib\debug.h">
+      <Filter>json\json_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_lib\json.h">
+      <Filter>json\json_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_lib\json_object.h">
+      <Filter>json\json_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_lib\json_object_private.h">
+      <Filter>json\json_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_lib\json_tokener.h">
+      <Filter>json\json_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_lib\json_util.h">
+      <Filter>json\json_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_lib\linkhash.h">
+      <Filter>json\json_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLib\json_lib\printbuf.h">
+      <Filter>json\json_lib</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ChinaMobile.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ChinaMobileDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MapDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="taskDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="cameraCanon.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonLib\json_cpp\json_reader.cpp">
+      <Filter>json\json_cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonLib\json_cpp\json_value.cpp">
+      <Filter>json\json_cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonLib\json_cpp\json_writer.cpp">
+      <Filter>json\json_cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonLib\json_lib\arraylist.c">
+      <Filter>json\json_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonLib\json_lib\debug.c">
+      <Filter>json\json_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonLib\json_lib\json_object.c">
+      <Filter>json\json_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonLib\json_lib\json_tokener.c">
+      <Filter>json\json_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonLib\json_lib\json_util.c">
+      <Filter>json\json_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonLib\json_lib\linkhash.c">
+      <Filter>json\json_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonLib\json_lib\printbuf.c">
+      <Filter>json\json_lib</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ChinaMobile.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,23 @@
+2D-Map
+LineMinPos: -8156 -5069
+LineMaxPos: 5822 4469
+NumLines: 9
+LinesAreSorted: true
+Cairn: GoalWithHeading -6852 -399 -1.176850 "" ICON "7"
+Cairn: GoalWithHeading -6001 3138 1.925328 "" ICON "1"
+Cairn: GoalWithHeading -4624 -3473 133.838867 "" ICON "6"
+Cairn: GoalWithHeading -1042 3207 4.258827 "" ICON "2"
+Cairn: GoalWithHeading 369 -3439 86.900000 "" ICON "5"
+Cairn: GoalWithHeading 3518 -1061 -135.716637 "" ICON "4"
+Cairn: GoalWithHeading 3658 3182 -91.095851 "" ICON "3"
+LINES
+-8156 -5062 5816 -5062
+-8138 4469 5822 4469
+-8135 4453 -8135 -5056
+-5048 -510 -3224 1313
+-3231 1300 1760 1300
+-65 -522 -5062 -522
+1760 1301 -75 -534
+5794 -2481 3205 -5069
+5799 4463 5799 -5063
+DATA

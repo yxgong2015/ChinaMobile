@@ -1,5 +1,5 @@
 /* -------------------------------------------------------- *
- * Last modification date 2015/04/23 19:29  by: Xiaoxi Gong *
+ * Last modification date 2015/04/24 17:05  by: Xiaoxi Gong *
  * -------------------------------------------------------- *
 */
 #include "stdafx.h"
@@ -55,7 +55,8 @@ int test_flag=0, test_status=STATUS;
 //测试结束：103     completed
 //用例已下发：104   waiting
 //执行异常：404     abnormal
-int heartBeat_flag=0, HeartBeat_status=STATUS;
+int heartBeat_flag=0, heartBeat_status=STATUS;
+std::string heartBeat_state;
 
 //Status：返回状态，200：运行正常，500运行异常
 int end_flag=0, end_status=STATUS;
@@ -113,7 +114,7 @@ CChinaMobileDlg::CChinaMobileDlg(CWnd* pParent /*=NULL*/)
 	m_score = 0.0;
 	m_status = _T("");
 	m_mapName = _T("");
-	memcpy(taskID,"12312v",sizeof("12312a"));
+	memcpy(taskID,"12312w",sizeof("12312a"));
 }
 
 void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
@@ -215,7 +216,7 @@ BOOL CChinaMobileDlg::OnInitDialog()
 	// TODO: 在此添加额外的初始化代码
 	SetTimer(1, TM, NULL);  // set TIMER 
 
-	m_IP.SetAddress(192,168,213,115);//(192,168,244,128);
+	m_IP.SetAddress(192,168,244,128);//(192,168,213,115);
 
 	m_speedCtrl.SetRange(0,100); //设置滑块位置的最大值和最小值
 	m_speedCtrl.SetPos(38);     //设置滑块的默认当前位置
@@ -1114,7 +1115,7 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 	std::string bodyTochar;
 	CRect rectPicture; 
 	CString cmccTaskStatue, cmssTaskLog;
-	curlData *data_logIn, *data_startTest, *data_testStatus, *data_endTest;	
+	curlData *data_logIn, *data_testStatus, *data_startTest, *data_heartBeat, *data_endTest;	
 
 	CString str_time; //获取系统时间
 	CTime tm_sys;
@@ -1174,7 +1175,7 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 
 		CString statusS_str,statusE_str;
 		CString testS_str,testE_str;
-		CString heartBeatS_str,heartBeattE_str;
+		CString heartBeatS_str,heartBeatE_str;
 		CString endS_str,endE_str;
 		
 		//--- if reach the goal, robot starts following CMCC tasks ---//
@@ -1186,9 +1187,9 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 			loginS_str="login ...";
 			bodyTochar.clear();
-			conLoginCloudReqBody(bodyTochar);
-			data_logIn = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedStart.do", bodyTochar.c_str());
-			parseLoginCloudRespBody(data_logIn->data);
+			//conLoginCloudReqBody(bodyTochar);
+			//data_logIn = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedStart.do", bodyTochar.c_str());
+			//parseLoginCloudRespBody(data_logIn->data);
 			login_flag = 0;	
 			}
 
@@ -1237,9 +1238,9 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 			statusS_str="report status ...";
 			bodyTochar.clear();
-			conRepTestStatusReqBody(bodyTochar);
-			data_testStatus = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/reportStatus.do", bodyTochar.c_str());
-			parseRepTestStatusRespBody(data_testStatus->data);
+			//conRepTestStatusReqBody(bodyTochar);
+			//data_testStatus = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/reportStatus.do", bodyTochar.c_str());
+			//parseRepTestStatusRespBody(data_testStatus->data);
 			status_flag = 0;
 			}
 		
@@ -1270,35 +1271,100 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 			testS_str = "testing ...";
 			bodyTochar.clear();
-			conStartTestReqBody(bodyTochar);
-			data_startTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/deviceTestStart.do", bodyTochar.c_str());
-			parseStartTestRespBody(data_startTest->data);
+			//conStartTestReqBody(bodyTochar);
+			//data_startTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/deviceTestStart.do", bodyTochar.c_str());
+			//parseStartTestRespBody(data_startTest->data);
 			test_flag = 0;
 			}
 		
 				if(test_status == 200)
 				{
-				end_flag=1;
+				heartBeat_flag=1;
 				test_status = 0;
 				testE_str = "testing SUCCESS!";
 				}
 
 				else if(test_status == 500)
 				{
-				end_flag=0;
+				heartBeat_flag=0;
 				test_status = 0;
 				testE_str = "testing FAILD!";
 				}
 
 				else
 				{
-				end_flag=0;
+				heartBeat_flag=0;
 				test_status = 0;
 				testE_str = "testing ERROR!";
 				}
 		
 		
 			//--- 心跳，状态查询---//
+			if(heartBeat_flag == 1)
+			{
+			heartBeatS_str = "heartBeat test...";
+			bodyTochar.clear();
+			//conStartTestReqBody(bodyTochar);
+			//data_heartBeat = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedHeartbeat.do", bodyTochar.c_str());
+			//parseStartTestRespBody(data_heartBeat->data);
+			heartBeat_flag = 0;
+			}
+
+				/* ---------------------------- *
+				 * state定义：                  *
+				 * 测试准备：101  ready         *
+				 * 测试执行：102  running       *
+				 * 测试结束：103     completed  *
+				 * 用例已下发：104   waiting    *
+				 * 执行异常：404     abnormal   *
+				 * ---------------------------- *
+				 */
+
+				if(heartBeat_state == "101") //就绪
+				{
+					end_flag = 0;
+					heartBeat_state = "";
+				}
+
+				if(heartBeat_state == "102") //正在运行 
+				{
+					end_flag = 0;
+					heartBeat_state = "";
+				}
+
+				if(heartBeat_state == "103") //完成测试
+				{
+					end_flag = 0;
+
+					if(heartBeat_status == 200)
+					{
+						end_flag = 1;
+					}
+					
+					heartBeat_state = "";
+					heartBeatE_str="heartBeat test DONE";
+				}
+
+				if(heartBeat_state == "104") //等待
+				{
+					end_flag = 0;
+					heartBeat_state = "";
+					heartBeatE_str="heartBeat test WAIT";
+				}
+
+				if(heartBeat_state == "404") //异常
+				{
+					end_flag = 0;
+					heartBeat_state = "";
+					heartBeatE_str="heartBeat test FAILD";
+				}
+
+				else
+				{
+					end_flag = 0;
+					heartBeat_state = "";
+					heartBeatE_str="heartBeat test ERROR";
+				}
 
 
 			//--- 测试结束---//
@@ -1306,9 +1372,9 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 			endS_str="ending ...";
 			bodyTochar.clear();
-			conLogoutCloudReqBody(bodyTochar);
-			data_endTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedEnd.do", bodyTochar.c_str());
-			parseLogoutCloudRespBody(data_endTest->data);
+			//conLogoutCloudReqBody(bodyTochar);
+			//data_endTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedEnd.do", bodyTochar.c_str());
+			//parseLogoutCloudRespBody(data_endTest->data);
 			end_flag = 0;
 			}
 			
@@ -1343,6 +1409,7 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
 			+ statusS_str+"\r\n"+statusE_str +"\r\n"
 			+ testS_str+"\r\n"+testE_str +"\r\n"
+			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n"
 			+ endS_str+"\r\n"+endE_str;
 
 		m_log.SetWindowText(cmccTaskStatue);
@@ -1799,7 +1866,118 @@ int CChinaMobileDlg::parseStartTestRespBody(char* respbody)
 
 
 //-------------------- 4.心跳，获取测试状态 --------------------//
+int CChinaMobileDlg::conHeartBeatReqBody(std::string& reqbody)
+{
+	Json::Value arrayObj;  
+	Json::Value item1;
 
+                                        
+	item1["authcookie"]="71463e4b7b3ca62ae532abaf37d397e8";                         
+	item1["sn"]="358584050564393";                        //robot
+	item1["appid"]="3305642b89025d0d721cae224f082ef0";    //robot
+	item1["toolsversion"]="2.0.0";                        //robot
+        
+	arrayObj["testbed"]=(item1);   
+	arrayObj["taskid"]=taskID;  
+
+	reqbody=arrayObj.toStyledString();     
+	std::cout<<reqbody<<std::endl;  
+
+	return 0;
+}
+
+
+//--- parsing 心跳，获取测试状态 response ---//
+int CChinaMobileDlg::parseHeartBeatRespBody(char* respbody,std::string& state)
+{
+	Json::Reader reader;//json解析   
+	
+	Json::Value value;//表示一个json格式的对象     
+
+	if(reader.parse(respbody,value))//解析出json放到json中区                                                                        
+	{                                                                                                                               
+		                                                                                                                              
+		std::string message=value["message"].asString();                                                                                     
+		std::cout<<message<<std::endl;
+
+		int status=value["status"].asInt();  
+		heartBeat_status=status;
+		std::cout<<status<<std::endl;
+		
+		Json::Value jsonObj=value["detail"];//迭代器  
+
+		state = jsonObj["state"].asString();//返回running，completed，ready
+		heartBeat_state=state;
+
+		Json::Value subJsonObj = jsonObj["detail"];
+
+		Json::Value runningJsonObj  = subJsonObj["running"];	
+		Json::Value waitingJsonObj  = subJsonObj["waiting"];
+		Json::Value completedJsonObj  = subJsonObj["completed"];
+		Json::Value abnormalJsonObj  = subJsonObj["abnormal"];
+        
+
+		///////////////////////////////Running
+		std::string runningCount = runningJsonObj["count"].asString(); // string or integer
+		Json::Value runningDetail = runningJsonObj["detail"]; 
+
+		std::vector<std::string>   vecRunningSN;
+		std::vector<std::string>   vecRunningAppid;
+
+		 for (unsigned int i = 0; i < runningDetail.size(); i++)
+        {
+			vecRunningSN.push_back(runningDetail[i]["sn"].asString());
+			vecRunningAppid.push_back( runningDetail[i]["appid"].asString());
+        }
+
+
+        //////////////////////////////Waiting
+		std::string waitingCount = waitingJsonObj["count"].asString(); // string or integer
+		Json::Value waitingDetail = waitingJsonObj["detail"]; 
+
+		std::vector<std::string>   vecWaitingSN;
+		std::vector<std::string>   vecWaitingAppid;
+
+		 for (unsigned int i = 0; i < waitingDetail.size(); i++)
+        {
+			vecWaitingSN.push_back(waitingDetail[i]["sn"].asString());
+			vecWaitingAppid.push_back( waitingDetail[i]["appid"].asString());
+        }
+
+
+		 //////////////////////////Completed
+		std::string completedCount = completedJsonObj["count"].asString(); // string or integer
+		Json::Value completedDetail = completedJsonObj["detail"]; 
+
+		std::vector<std::string>   vecCompletedSN;
+		std::vector<std::string>   vecCompletedAppid;
+
+		 for (unsigned int i = 0; i < completedDetail.size(); i++)
+        {
+			vecCompletedSN.push_back(completedDetail[i]["sn"].asString());
+			vecCompletedAppid.push_back( completedDetail[i]["appid"].asString());
+        }
+
+
+		 //////////////Abnormal
+		std::string abnormalCount = abnormalJsonObj["count"].asString(); // string or integer
+		Json::Value abnormalDetail = abnormalJsonObj["detail"]; 
+
+		std::vector<std::string>   vecAbnormalSN;
+		std::vector<std::string>   vecAbnormalAppid;
+
+		 for (unsigned int i = 0; i < abnormalJsonObj.size(); i++)
+        {
+			vecAbnormalSN.push_back(abnormalJsonObj[i]["sn"].asString());
+			vecAbnormalAppid.push_back( abnormalJsonObj[i]["appid"].asString());
+        }
+
+		                                                                                                                              
+	} 
+	else return -1;
+
+	return 0;
+}
 //---------//
 
 

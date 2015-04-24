@@ -1,5 +1,5 @@
 /* -------------------------------------------------------- *
- * Last modification date 2015/04/24 17:05  by: Xiaoxi Gong *
+ * Last modification date 2015/04/24 19:26  by: Xiaoxi Gong *
  * -------------------------------------------------------- *
 */
 #include "stdafx.h"
@@ -114,7 +114,7 @@ CChinaMobileDlg::CChinaMobileDlg(CWnd* pParent /*=NULL*/)
 	m_score = 0.0;
 	m_status = _T("");
 	m_mapName = _T("");
-	memcpy(taskID,"12312w",sizeof("12312a"));
+	memcpy(taskID,"12313z",sizeof("12312a"));
 }
 
 void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
@@ -1187,9 +1187,9 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 			loginS_str="login ...";
 			bodyTochar.clear();
-			//conLoginCloudReqBody(bodyTochar);
-			//data_logIn = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedStart.do", bodyTochar.c_str());
-			//parseLoginCloudRespBody(data_logIn->data);
+			conLoginCloudReqBody(bodyTochar);
+			data_logIn = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedStart.do", bodyTochar.c_str());
+			parseLoginCloudRespBody(data_logIn->data);
 			login_flag = 0;	
 			}
 
@@ -1238,9 +1238,9 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 			statusS_str="report status ...";
 			bodyTochar.clear();
-			//conRepTestStatusReqBody(bodyTochar);
-			//data_testStatus = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/reportStatus.do", bodyTochar.c_str());
-			//parseRepTestStatusRespBody(data_testStatus->data);
+			conRepTestStatusReqBody(bodyTochar);
+			data_testStatus = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/reportStatus.do", bodyTochar.c_str());
+			parseRepTestStatusRespBody(data_testStatus->data);
 			status_flag = 0;
 			}
 		
@@ -1271,9 +1271,9 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 			testS_str = "testing ...";
 			bodyTochar.clear();
-			//conStartTestReqBody(bodyTochar);
-			//data_startTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/deviceTestStart.do", bodyTochar.c_str());
-			//parseStartTestRespBody(data_startTest->data);
+			conStartTestReqBody(bodyTochar);
+			data_startTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/deviceTestStart.do", bodyTochar.c_str());
+			parseStartTestRespBody(data_startTest->data);
 			test_flag = 0;
 			}
 		
@@ -1298,15 +1298,17 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 				testE_str = "testing ERROR!";
 				}
 		
-		
+		//--- wait a few second here and continue heart beat test ---//
+		//Sleep(30000); 
+
 			//--- 心跳，状态查询---//
 			if(heartBeat_flag == 1)
 			{
 			heartBeatS_str = "heartBeat test...";
 			bodyTochar.clear();
-			//conStartTestReqBody(bodyTochar);
-			//data_heartBeat = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedHeartbeat.do", bodyTochar.c_str());
-			//parseStartTestRespBody(data_heartBeat->data);
+			conHeartBeatReqBody(bodyTochar);
+			data_heartBeat = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedHeartbeat.do", bodyTochar.c_str());
+			parseHeartBeatRespBody(data_heartBeat->data);
 			heartBeat_flag = 0;
 			}
 
@@ -1320,50 +1322,57 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 				 * ---------------------------- *
 				 */
 
-				if(heartBeat_state == "101") //就绪
+				if(heartBeat_status == 200)
 				{
-					end_flag = 0;
-					heartBeat_state = "";
-				}
-
-				if(heartBeat_state == "102") //正在运行 
-				{
-					end_flag = 0;
-					heartBeat_state = "";
-				}
-
-				if(heartBeat_state == "103") //完成测试
-				{
-					end_flag = 0;
-
-					if(heartBeat_status == 200)
+					if(heartBeat_state == "101") //就绪
 					{
-						end_flag = 1;
+					end_flag = 0;
+					heartBeat_state = "";
+					heartBeatE_str="heartBeat test READY";
 					}
-					
+
+					if(heartBeat_state == "102") //正在运行 
+					{
+					end_flag = 0;
+					heartBeat_state = "";
+					heartBeatE_str="heartBeat test RUNNING";
+					}
+
+					if(heartBeat_state == "103") //完成测试
+					{
+					end_flag = 1;
 					heartBeat_state = "";
 					heartBeatE_str="heartBeat test DONE";
-				}
+					}
 
-				if(heartBeat_state == "104") //等待
-				{
+					if(heartBeat_state == "104") //等待
+					{
 					end_flag = 0;
 					heartBeat_state = "";
 					heartBeatE_str="heartBeat test WAIT";
-				}
+					}
 
-				if(heartBeat_state == "404") //异常
-				{
+					if(heartBeat_state == "404") //异常
+					{
 					end_flag = 0;
 					heartBeat_state = "";
-					heartBeatE_str="heartBeat test FAILD";
+					heartBeatE_str="heartBeat test ABNORMAL";
+					}
 				}
 
+				else if(heartBeat_status == 500)
+				{
+				end_flag = 0;
+				heartBeat_status = 0;
+				endE_str="heartBeat test FAILD!";
+				}
+				
 				else
 				{
-					end_flag = 0;
-					heartBeat_state = "";
-					heartBeatE_str="heartBeat test ERROR";
+				end_flag = 0;
+				heartBeat_status = 0;
+				heartBeat_state = "";
+				heartBeatE_str="heartBeat test ERROR";
 				}
 
 
@@ -1372,9 +1381,9 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 			endS_str="ending ...";
 			bodyTochar.clear();
-			//conLogoutCloudReqBody(bodyTochar);
-			//data_endTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedEnd.do", bodyTochar.c_str());
-			//parseLogoutCloudRespBody(data_endTest->data);
+			conLogoutCloudReqBody(bodyTochar);
+			data_endTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedEnd.do", bodyTochar.c_str());
+			parseLogoutCloudRespBody(data_endTest->data);
 			end_flag = 0;
 			}
 			
@@ -1873,9 +1882,9 @@ int CChinaMobileDlg::conHeartBeatReqBody(std::string& reqbody)
 
                                         
 	item1["authcookie"]="71463e4b7b3ca62ae532abaf37d397e8";                         
-	item1["sn"]="358584050564393";                        //robot
-	item1["appid"]="3305642b89025d0d721cae224f082ef0";    //robot
-	item1["toolsversion"]="2.0.0";                        //robot
+	item1["sn"]="5906-0000228";          //robot
+	item1["appid"]="1.0.0";              //robot
+	item1["toolsversion"]="2.0.0";       //robot
         
 	arrayObj["testbed"]=(item1);   
 	arrayObj["taskid"]=taskID;  
@@ -1888,7 +1897,7 @@ int CChinaMobileDlg::conHeartBeatReqBody(std::string& reqbody)
 
 
 //--- parsing 心跳，获取测试状态 response ---//
-int CChinaMobileDlg::parseHeartBeatRespBody(char* respbody,std::string& state)
+int CChinaMobileDlg::parseHeartBeatRespBody(char* respbody) //(char* respbody,std::string& state)
 {
 	Json::Reader reader;//json解析   
 	
@@ -1906,19 +1915,33 @@ int CChinaMobileDlg::parseHeartBeatRespBody(char* respbody,std::string& state)
 		
 		Json::Value jsonObj=value["detail"];//迭代器  
 
-		state = jsonObj["state"].asString();//返回running，completed，ready
+		std::string state = jsonObj["state"].asString();//返回running，completed，ready
 		heartBeat_state=state;
 
 		Json::Value subJsonObj = jsonObj["detail"];
 
+		Json::Value readyJsonObj  = subJsonObj["ready"];
 		Json::Value runningJsonObj  = subJsonObj["running"];	
 		Json::Value waitingJsonObj  = subJsonObj["waiting"];
 		Json::Value completedJsonObj  = subJsonObj["completed"];
 		Json::Value abnormalJsonObj  = subJsonObj["abnormal"];
-        
+       
+
+		//////////////ready
+		int readyCount = readyJsonObj["count"].asInt(); // string or integer
+		Json::Value readyDetail = readyJsonObj["detail"]; 
+
+		std::vector<std::string>   vecReadySN;
+		std::vector<std::string>   vecReadyAppid;
+
+		 for (unsigned int i = 0; i < readyDetail.size(); i++)
+        {
+			vecReadySN.push_back(readyDetail[i]["sn"].asString());
+			vecReadyAppid.push_back( readyDetail[i]["appid"].asString());
+        }
 
 		///////////////////////////////Running
-		std::string runningCount = runningJsonObj["count"].asString(); // string or integer
+		int runningCount = runningJsonObj["count"].asInt(); // string or integer
 		Json::Value runningDetail = runningJsonObj["detail"]; 
 
 		std::vector<std::string>   vecRunningSN;
@@ -1932,7 +1955,7 @@ int CChinaMobileDlg::parseHeartBeatRespBody(char* respbody,std::string& state)
 
 
         //////////////////////////////Waiting
-		std::string waitingCount = waitingJsonObj["count"].asString(); // string or integer
+		int waitingCount = waitingJsonObj["count"].asInt(); // string or integer
 		Json::Value waitingDetail = waitingJsonObj["detail"]; 
 
 		std::vector<std::string>   vecWaitingSN;
@@ -1944,9 +1967,8 @@ int CChinaMobileDlg::parseHeartBeatRespBody(char* respbody,std::string& state)
 			vecWaitingAppid.push_back( waitingDetail[i]["appid"].asString());
         }
 
-
 		 //////////////////////////Completed
-		std::string completedCount = completedJsonObj["count"].asString(); // string or integer
+		int completedCount = completedJsonObj["count"].asInt(); // string or integer
 		Json::Value completedDetail = completedJsonObj["detail"]; 
 
 		std::vector<std::string>   vecCompletedSN;
@@ -1960,18 +1982,17 @@ int CChinaMobileDlg::parseHeartBeatRespBody(char* respbody,std::string& state)
 
 
 		 //////////////Abnormal
-		std::string abnormalCount = abnormalJsonObj["count"].asString(); // string or integer
+		int abnormalCount = abnormalJsonObj["count"].asInt(); // string or integer
 		Json::Value abnormalDetail = abnormalJsonObj["detail"]; 
 
 		std::vector<std::string>   vecAbnormalSN;
 		std::vector<std::string>   vecAbnormalAppid;
 
-		 for (unsigned int i = 0; i < abnormalJsonObj.size(); i++)
+		 for (unsigned int i = 0; i < abnormalDetail.size(); i++)
         {
-			vecAbnormalSN.push_back(abnormalJsonObj[i]["sn"].asString());
-			vecAbnormalAppid.push_back( abnormalJsonObj[i]["appid"].asString());
+			vecAbnormalSN.push_back(abnormalDetail[i]["sn"].asString());
+			vecAbnormalAppid.push_back( abnormalDetail[i]["appid"].asString());
         }
-
 		                                                                                                                              
 	} 
 	else return -1;

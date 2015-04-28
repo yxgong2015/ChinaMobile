@@ -62,6 +62,7 @@ std::string heartBeat_state;
 int end_flag=0, end_status=STATUS;
 
 CString G_Warning,Global_IP,Goal_name,Goal_list,local_Status,map_name,task_Goal,scan_MapName;
+CString cmccTaskStatue, cmccTaskDetail;
 std::vector<ArLineSegment> sMap;
 
 
@@ -458,7 +459,7 @@ void MapDlg::newMap(CDC *pDC, CRect &rectPicture)
 	armap.readFile(oldMapName);
 
 	//------------------------------- TEST SPACE --------------------------------//
-
+	
 	/*//ArMapInfo mi;
 	const char* a = "Cairn:";
 	//mi.CAIRN_INFO;
@@ -1154,18 +1155,372 @@ for(vector<ArLineSegment>::iterator itD = GoalPose.getLines()->begin();itD != Go
 //---------------------//
 
 
-//---------- Refresh real time data ----------//
-void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
+//----- Aux thread processes cmcc tasks -----//
+UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 {
 	int heartBeat_count = 0;
 	std::string bodyTochar;
-	CRect rectPicture; 
-	CString cmccTaskStatue, cmssTaskLog;
+	CString cmssTaskLog;
 	curlData *data_logIn, *data_testStatus, *data_startTest, *data_heartBeat, *data_endTest;	
 
 	CString str_time; //获取系统时间
 	CTime tm_sys;
+
+	while(1)
+	{
+
+		if(ls_handler!='G' && ls_handler!='F' && tFlag==99)
+		{
+		tFlag=0;
+		CString loginS_str,loginE_str,login_ERROR,login_ERROR_1,login_ERROR_2,login_ERROR_3;;
+
+		CString statusS_str,statusE_str;
+		CString testS_str,testE_str;
+		CString heartBeatS_str,heartBeatE_str;
+		CString endS_str,endE_str;
 		
+		//--- if reach the goal, robot starts following CMCC tasks ---//
+		//ShellExecute(this->m_hWnd,"open","http://www.baidu.com","","", SW_SHOW );
+		CChinaMobileDlg cg;
+
+			Sleep(3000);
+			//--- 登陆---//
+			if(login_flag == 1)  // if arrive to Goal successfully, flag will be set to "1"
+			{
+			loginS_str="login ...";
+			bodyTochar.clear();
+			//cg.conLoginCloudReqBody(bodyTochar);
+			//data_logIn = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedStart.do", bodyTochar.c_str());
+			//cg.parseLoginCloudRespBody(data_logIn->data);
+			login_flag = 0;	
+			}
+
+				if(login_status != 0 || login_licenState != "" || login_userState != "")
+				{
+				status_flag=0;
+				loginE_str="login FAILD!";
+
+					if(login_status == 200 && login_licenState == "100" && login_userState == "200")
+					{
+						status_flag=1;
+						loginE_str="login SUCCESS!";
+					}
+
+					if(login_status == 200) login_ERROR_1="status 200";
+					if(login_status == 500) login_ERROR_1="status 500";
+					if(login_status != 500 && login_status != 200) login_ERROR_1="status error";
+
+					if(login_licenState == "100") login_ERROR_2="license state 100";
+					if(login_licenState == "404") login_ERROR_2="license state 404";
+					if(login_licenState != "100" && login_licenState != "404") login_ERROR_2="license state error";
+
+					if(login_userState == "200") login_ERROR_3="user state 200";
+					if(login_userState == "404") login_ERROR_3="user state 404";
+					if(login_userState != "200" && login_userState != "404") login_ERROR_3="user state error";
+
+				login_ERROR=login_ERROR_1+"\r\n"+login_ERROR_2+"\r\n"+login_ERROR_3+"\r\n";
+
+				login_status = 0;
+				login_licenState = "";
+				login_userState = "";
+				}
+
+				else
+				{
+				status_flag=0;
+				login_status = 0;
+				login_licenState = "";
+				login_userState = "";
+				loginE_str="login ERROR!";
+				}
+
+			Sleep(3000);
+			//--- 上报状态---//
+			if(status_flag == 1)
+			{
+			statusS_str="report status ...";
+			bodyTochar.clear();
+			//cg.conRepTestStatusReqBody(bodyTochar);
+			//data_testStatus = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/reportStatus.do", bodyTochar.c_str());
+			//cg.parseRepTestStatusRespBody(data_testStatus->data);
+			status_flag = 0;
+			}
+		
+				if(status_status == 200)
+				{
+				test_flag=1;
+				status_status = 0;
+				statusE_str="report status SUCCESS!";
+				}
+
+				else if(status_status == 500)
+				{
+				test_flag=0;
+				status_status = 0;
+				statusE_str="report status FAILD!";
+				}
+
+				else
+				{
+				test_flag=0;
+				status_status = 0;
+				statusE_str="report status ERROR!";
+				}
+		
+			Sleep(3000);
+			//--- 到达目的，开始测试---//
+			if(test_flag == 1)
+			{
+			testS_str = "testing ...";
+			bodyTochar.clear();
+			//cg.conStartTestReqBody(bodyTochar);
+			//data_startTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/deviceTestStart.do", bodyTochar.c_str());
+			//cg.parseStartTestRespBody(data_startTest->data);
+			test_flag = 0;
+			}
+		
+				if(test_status == 200)
+				{
+				heartBeat_flag=1;
+				test_status = 0;
+				testE_str = "testing SUCCESS!";
+				}
+
+				else if(test_status == 500)
+				{
+				heartBeat_flag=0;
+				test_status = 0;
+				testE_str = "testing FAILD!";
+				}
+
+				else
+				{
+				heartBeat_flag=0;
+				test_status = 0;
+				testE_str = "testing ERROR!";
+				}
+		
+			//--- wait a few second here and continue heart beat test ---//
+			Sleep(5000);
+			//--- 心跳，状态查询---//
+			if(heartBeat_flag == 1)
+			{
+			heartBeat_testAgain:
+
+			heartBeatS_str = "heartBeat test...";
+			bodyTochar.clear();
+			//cg.conHeartBeatReqBody(bodyTochar);
+			//data_heartBeat = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedHeartbeat.do", bodyTochar.c_str());
+			//cg.parseHeartBeatRespBody(data_heartBeat->data);
+			heartBeat_flag = 0;
+			heartBeat_count = heartBeat_count + 1;
+			}
+			
+				/* ---------------------------- *
+				 * state定义：                  *
+				 * 测试准备：101  ready         *
+				 * 测试执行：102  running       *
+				 * 测试结束：103     completed  *
+				 * 用例已下发：104   waiting    *
+				 * 执行异常：404     abnormal   *
+				 * ---------------------------- *
+				 */ 
+				//103 /404 finish
+				if(heartBeat_status != 200 && heartBeat_status != 500)
+				{
+					end_flag = 0;
+					heartBeat_status = 0;
+					heartBeatE_str="heartBeat test ERROR";
+				}
+
+				if(heartBeat_status == 500)
+				{
+					end_flag = 0;
+					heartBeat_status = 0;
+					endE_str="heartBeat test FAILD!";
+				}
+
+				/* ---------------------- *
+				 * Heart beat tests begin *
+				 * ---------------------- *
+				 */
+				if(heartBeat_status == 200)
+				{
+					if(heartBeat_state == "101") //就绪
+					{
+						end_flag = 0;
+						heartBeat_state = "";
+						heartBeatE_str="heartBeat test READY";
+
+						Sleep(1000);
+						if(heartBeat_count == 30)goto heartBeat_out;
+						goto heartBeat_testAgain;
+					}
+
+					if(heartBeat_state == "102") //正在运行 
+					{
+						end_flag = 0;
+						heartBeat_state = "";
+						heartBeatE_str="heartBeat test RUNNING";
+
+						Sleep(1000);
+						if(heartBeat_count == 30)goto heartBeat_out;
+						goto heartBeat_testAgain;
+					}
+
+					if(heartBeat_state == "104") //等待
+					{
+						end_flag = 0;
+						heartBeat_state = "";
+						heartBeatE_str="heartBeat test WAIT";
+
+						Sleep(1000);
+						if(heartBeat_count == 30)goto heartBeat_out;
+						goto heartBeat_testAgain;
+					}
+
+					else
+					{
+						if(heartBeat_state == "103" || heartBeat_state == "404")
+						{
+
+							if(heartBeat_state == "103") //完成测试
+							{
+								end_flag = 1;
+								heartBeat_state = "";
+								heartBeatE_str="heartBeat test DONE";
+
+								goto heartBeat_out;
+							}
+
+							if(heartBeat_state == "404") //异常
+							{
+								end_flag = 1;
+								heartBeat_state = "";
+								heartBeatE_str="heartBeat test ABNORMAL";
+
+								goto heartBeat_out;
+							}
+
+						end_flag = 1;
+						heartBeat_state = "";
+						heartBeatE_str="heartBeat state ERROR";
+						}
+					}
+				}
+				heartBeat_out:
+
+			Sleep(3000);
+			//--- 测试结束---//
+			if(end_flag == 1)
+			{
+			endS_str="ending ...";
+			bodyTochar.clear();
+			//cg.conLogoutCloudReqBody(bodyTochar);
+			//data_endTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedEnd.do", bodyTochar.c_str());
+			//cg.parseLogoutCloudRespBody(data_endTest->data);
+			end_flag = 0;
+			}
+			
+				if(end_status == 200)
+				{
+				taskSUS_flag = 1;
+				end_status = 0;
+				endE_str="ending SUCCESS!";
+				}
+
+				else if(end_status == 500)
+				{
+				taskSUS_flag = 2;
+				end_status = 0;
+				endE_str="ending FAILD!";
+				}
+
+				else
+				{
+				taskSUS_flag = 3;
+				end_status = 0;
+				endE_str="ending ERROR!";
+				}
+
+		//--- end CMCC tasks ---//
+		tm_sys=CTime::GetCurrentTime();   
+		str_time=tm_sys.Format("%Y_%m_%d_%X");
+
+
+		cmccTaskStatue = str_time +"\r\n"+"Arriving to: \r\n" + task_Goal+"\r\n" 
+			+ "sending POST to server..."+"\r\n"
+			+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
+			+ statusS_str+"\r\n"+statusE_str +"\r\n"
+			+ testS_str+"\r\n"+testE_str +"\r\n"
+			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
+			+ endS_str+"\r\n"+endE_str;
+
+
+		cmccTaskDetail = str_time +"\r\n"+"pioneer-lx reaches to: \r\n" + task_Goal +"\r\n" 
+			+ "sending POST request to server..." +"\r\n"
+			+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
+			+ statusS_str+"\r\n"+statusE_str +"\r\n"
+			+ testS_str+"\r\n"+testE_str +"\r\n"
+			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
+			+ endS_str+"\r\n"+endE_str +"\r\n";
+
+
+		TaskNo = TaskNo + 1; // line + 1
+		flag = 31; // get the next line of GOAL, and doing same task
+
+			if(TaskNo > nLineCount)
+			{
+			flag = 0;
+			}
+
+		goto outTask;
+		}
+	outTask:
+
+		if(taskSUS_flag == 1) // if POST success, and get "200" feedback, plot the GREEN sign on the map 
+		{
+		redPath=0;
+		greenPath=245;
+		bluePath=0;
+		taskSUS_flag = 0;
+		}
+
+		if(taskSUS_flag == 2) // if POST faild, and get "500" feedback, plot the RED sign on the map 
+		{
+		redPath=245;
+		greenPath=0;
+		bluePath=0;
+		taskSUS_flag = 0;
+		}
+
+		/*if(taskSUS_flag == 0) // if ERROR, and get "0" feedback, plot the YELLOW sign on the map 
+		{
+		redPath=0;
+		greenPath=245;
+		bluePath=245;
+		taskSUS_flag = 0;
+		}*/
+
+
+
+
+
+
+
+
+
+		Sleep(1000);
+	}
+}
+//---------------------//
+
+
+//---------- Refresh real time data ----------//
+void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	CRect rectPicture;
+
 	UpdateData(true);
 	m_Xpose = tempX;
 	m_Ypose = tempY;
@@ -1213,341 +1568,44 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 		flag = 0;	
 		}
 		
-
-		if(ls_handler!='G' && ls_handler!='F' && tFlag==99)
+		if(taskSUS_flag == 1 || taskSUS_flag == 2 || taskSUS_flag == 3)
 		{
-		tFlag=0;
-		CString loginS_str,loginE_str,login_ERROR,login_ERROR_1,login_ERROR_2,login_ERROR_3;;
+			m_log.SetWindowText(cmccTaskStatue);
+			//--- record the data in text file ---//
+			//using namespace std;
+			std::ofstream write_task;
 
-		CString statusS_str,statusE_str;
-		CString testS_str,testE_str;
-		CString heartBeatS_str,heartBeatE_str;
-		CString endS_str,endE_str;
-		
-		//--- if reach the goal, robot starts following CMCC tasks ---//
-		//ShellExecute(this->m_hWnd,"open","http://www.baidu.com","","", SW_SHOW );
+			write_task.open("CMCC_TASK.txt",std::ios::app);
+			write_task<<cmccTaskStatue;
+			write_task<<std::endl;
+			write_task.close(); 
 
-
-			//--- 登陆---//
-			if(login_flag == 1)  // if arrive to Goal successfully, flag will be set to "1"
-			{
-			loginS_str="login ...";
-			bodyTochar.clear();
-			conLoginCloudReqBody(bodyTochar);
-			data_logIn = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedStart.do", bodyTochar.c_str());
-			parseLoginCloudRespBody(data_logIn->data);
-			login_flag = 0;	
-			}
-
-				if(login_status != 0 || login_licenState != "" || login_userState != "")
-				{
-				status_flag=0;
-				loginE_str="login FAILD!";
-
-					if(login_status == 200 && login_licenState == "100" && login_userState == "200")
-					{
-						status_flag=1;
-						loginE_str="login SUCCESS!";
-					}
-
-					if(login_status == 200) login_ERROR_1="status 200";
-					if(login_status == 500) login_ERROR_1="status 500";
-					if(login_status != 500 && login_status != 200) login_ERROR_1="status error";
-
-					if(login_licenState == "100") login_ERROR_2="license state 100";
-					if(login_licenState == "404") login_ERROR_2="license state 404";
-					if(login_licenState != "100" && login_licenState != "404") login_ERROR_2="license state error";
-
-					if(login_userState == "200") login_ERROR_3="user state 200";
-					if(login_userState == "404") login_ERROR_3="user state 404";
-					if(login_userState != "200" && login_userState != "404") login_ERROR_3="user state error";
-
-				login_ERROR=login_ERROR_1+"\r\n"+login_ERROR_2+"\r\n"+login_ERROR_3+"\r\n";
-
-				login_status = 0;
-				login_licenState = "";
-				login_userState = "";
-				}
-
-				else
-				{
-				status_flag=0;
-				login_status = 0;
-				login_licenState = "";
-				login_userState = "";
-				loginE_str="login ERROR!";
-				}
-		
-
-			//--- 上报状态---//
-			if(status_flag == 1)
-			{
-			statusS_str="report status ...";
-			bodyTochar.clear();
-			conRepTestStatusReqBody(bodyTochar);
-			data_testStatus = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/reportStatus.do", bodyTochar.c_str());
-			parseRepTestStatusRespBody(data_testStatus->data);
-			status_flag = 0;
-			}
-		
-				if(status_status == 200)
-				{
-				test_flag=1;
-				status_status = 0;
-				statusE_str="report status SUCCESS!";
-				}
-
-				else if(status_status == 500)
-				{
-				test_flag=0;
-				status_status = 0;
-				statusE_str="report status FAILD!";
-				}
-
-				else
-				{
-				test_flag=0;
-				status_status = 0;
-				statusE_str="report status ERROR!";
-				}
-		
-
-			//--- 到达目的，开始测试---//
-			if(test_flag == 1)
-			{
-			testS_str = "testing ...";
-			bodyTochar.clear();
-			conStartTestReqBody(bodyTochar);
-			data_startTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/deviceTestStart.do", bodyTochar.c_str());
-			parseStartTestRespBody(data_startTest->data);
-			test_flag = 0;
-			}
-		
-				if(test_status == 200)
-				{
-				heartBeat_flag=1;
-				test_status = 0;
-				testE_str = "testing SUCCESS!";
-				}
-
-				else if(test_status == 500)
-				{
-				heartBeat_flag=0;
-				test_status = 0;
-				testE_str = "testing FAILD!";
-				}
-
-				else
-				{
-				heartBeat_flag=0;
-				test_status = 0;
-				testE_str = "testing ERROR!";
-				}
-		
-		//--- wait a few second here and continue heart beat test ---//
-		Sleep(15000); 
-
-			//--- 心跳，状态查询---//
-			if(heartBeat_flag == 1)
-			{
-			heartBeat_testAgain:
-
-			heartBeatS_str = "heartBeat test...";
-			bodyTochar.clear();
-			conHeartBeatReqBody(bodyTochar);
-			data_heartBeat = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedHeartbeat.do", bodyTochar.c_str());
-			parseHeartBeatRespBody(data_heartBeat->data);
-			heartBeat_flag = 0;
-			heartBeat_count = heartBeat_count + 1;
-			}
-			
-				/* ---------------------------- *
-				 * state定义：                  *
-				 * 测试准备：101  ready         *
-				 * 测试执行：102  running       *
-				 * 测试结束：103     completed  *
-				 * 用例已下发：104   waiting    *
-				 * 执行异常：404     abnormal   *
-				 * ---------------------------- *
-				 */ 
-				//103 /404 finish
-				if(heartBeat_status != 200 && heartBeat_status != 500)
-				{
-					end_flag = 0;
-					heartBeat_status = 0;
-					heartBeatE_str="heartBeat test ERROR";
-				}
-
-				if(heartBeat_status == 500)
-				{
-					end_flag = 0;
-					heartBeat_status = 0;
-					endE_str="heartBeat test FAILD!";
-				}
-
-				/* ---------------------- *
-				 * Heart beat tests begin *
-				 * ---------------------- *
-				 */
-				if(heartBeat_status == 200)
-				{
-					if(heartBeat_state == "101") //就绪
-					{
-						end_flag = 0;
-						heartBeat_state = "";
-						heartBeatE_str="heartBeat test READY";
-
-						Sleep(1000);
-						if(heartBeat_count == 300)goto heartBeat_out;
-						goto heartBeat_testAgain;
-					}
-
-					if(heartBeat_state == "102") //正在运行 
-					{
-						end_flag = 0;
-						heartBeat_state = "";
-						heartBeatE_str="heartBeat test RUNNING";
-
-						Sleep(1000);
-						if(heartBeat_count == 300)goto heartBeat_out;
-						goto heartBeat_testAgain;
-					}
-
-					if(heartBeat_state == "104") //等待
-					{
-						end_flag = 0;
-						heartBeat_state = "";
-						heartBeatE_str="heartBeat test WAIT";
-
-						Sleep(1000);
-						if(heartBeat_count == 300)goto heartBeat_out;
-						goto heartBeat_testAgain;
-					}
-
-					else
-					{
-						if(heartBeat_state == "103" || heartBeat_state == "404")
-						{
-
-							if(heartBeat_state == "103") //完成测试
-							{
-								end_flag = 1;
-								heartBeat_state = "";
-								heartBeatE_str="heartBeat test DONE";
-
-								goto heartBeat_out;
-							}
-
-							if(heartBeat_state == "404") //异常
-							{
-								end_flag = 1;
-								heartBeat_state = "";
-								heartBeatE_str="heartBeat test ABNORMAL";
-
-								goto heartBeat_out;
-							}
-
-						end_flag = 1;
-						heartBeat_state = "";
-						heartBeatE_str="heartBeat state ERROR";
-						}
-					}
-				}
-				heartBeat_out:
-
-
-			//--- 测试结束---//
-			if(end_flag == 1)
-			{
-			endS_str="ending ...";
-			bodyTochar.clear();
-			conLogoutCloudReqBody(bodyTochar);
-			data_endTest = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedEnd.do", bodyTochar.c_str());
-			parseLogoutCloudRespBody(data_endTest->data);
-			end_flag = 0;
-			}
-			
-				if(end_status == 200)
-				{
-				taskSUS_flag = 1;
-				end_status = 0;
-				endE_str="ending SUCCESS!";
-				}
-
-				else if(end_status == 500)
-				{
-				taskSUS_flag = 2;
-				end_status = 0;
-				endE_str="ending FAILD!";
-				}
-
-				else
-				{
-				taskSUS_flag = 0;
-				end_status = 0;
-				endE_str="ending ERROR!";
-				}
-
-		//--- end CMCC tasks ---//
-		tm_sys=CTime::GetCurrentTime();   
-		str_time=tm_sys.Format("%Y_%m_%d_%X");
-
-
-		cmccTaskStatue = str_time +"\r\n"+"Arriving to: \r\n" + task_Goal+"\r\n" 
-			+ "sending POST to server..."+"\r\n"
-			+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
-			+ statusS_str+"\r\n"+statusE_str +"\r\n"
-			+ testS_str+"\r\n"+testE_str +"\r\n"
-			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
-			+ endS_str+"\r\n"+endE_str;
-
-		m_log.SetWindowText(cmccTaskStatue);
-
-		//--- record the data in text file ---//
-		//using namespace std;
-		std::ofstream write_task;
-
-		write_task.open("CMCC_TASK.txt",std::ios::app);
-		write_task<<cmccTaskStatue;
-		write_task<<std::endl;
-		write_task.close(); 
+			taskSUS_flag = 99;
+		}
 		//--------------//
+	
+	CDialogEx::OnTimer(nIDEvent);
+}
+//----------------------------//
 
-		TaskNo = TaskNo + 1; // line + 1
-		flag = 31; // get the next line of GOAL, and doing same task
 
-			if(TaskNo > nLineCount)
-			{
-			flag = 0;
-			}
+//---------- OnTimer for static map dialog ----------//
+void MapDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	CRect rectPicture;
 
-		goto outTask;
-		}
-	outTask:
-
-		if(taskSUS_flag == 1) // if POST success, and get "200" feedback, plot the GREEN sign on the map 
+		switch(nIDEvent)
 		{
-		redPath=0;
-		greenPath=245;
-		bluePath=0;
-		taskSUS_flag = 0;
+			case 2: m_newMapDisplay.GetClientRect(&rectPicture); 
+					newMapBot(m_newMapDisplay.GetDC(), rectPicture);
+					break;
 		}
 
-		if(taskSUS_flag == 2) // if POST faild, and get "500" feedback, plot the RED sign on the map 
+		if(taskSUS_flag == 99)
 		{
-		redPath=245;
-		greenPath=0;
-		bluePath=0;
-		taskSUS_flag = 0;
+			m_taskLog.SetWindowText(cmccTaskDetail);
+			taskSUS_flag = 0;
 		}
-
-		/*if(taskSUS_flag == 0) // if ERROR, and get "0" feedback, plot the YELLOW sign on the map 
-		{
-		redPath=0;
-		greenPath=245;
-		bluePath=245;
-		taskSUS_flag = 0;
-		}*/
 
 	CDialogEx::OnTimer(nIDEvent);
 }
@@ -2376,6 +2434,8 @@ void CChinaMobileDlg::OnNMCustomdrawSlider1(NMHDR *pNMHDR, LRESULT *pResult)
 void CChinaMobileDlg::OnBnClickedButton16()
 {
 	flag=31; // CMCC task starts
+
+	AfxBeginThread(AuxThread, this);
 
 	//--- following program can capture each line's text in Edit Ccontrol ---//
 	/*CString strText;

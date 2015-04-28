@@ -1,5 +1,5 @@
 /* -------------------------------------------------------- *
- * Last modification date 2015/04/24 19:26  by: Xiaoxi Gong *
+ * Last modification date 2015/04/28 19:14  by: Xiaoxi Gong *
  * -------------------------------------------------------- *
 */
 #include "stdafx.h"
@@ -114,7 +114,11 @@ CChinaMobileDlg::CChinaMobileDlg(CWnd* pParent /*=NULL*/)
 	m_score = 0.0;
 	m_status = _T("");
 	m_mapName = _T("");
-	memcpy(taskID,"12313z",sizeof("12312a"));
+
+	//--- random number ---//
+
+
+	memcpy(taskID,"12315k",sizeof("12312a")); // taskID should less than 50 byte
 }
 
 void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
@@ -216,7 +220,7 @@ BOOL CChinaMobileDlg::OnInitDialog()
 	// TODO: 在此添加额外的初始化代码
 	SetTimer(1, TM, NULL);  // set TIMER 
 
-	m_IP.SetAddress(192,168,244,128);//(192,168,213,115);
+	m_IP.SetAddress(192,168,244,128);//(192,168,11,24);//(192,168,213,115);
 
 	m_speedCtrl.SetRange(0,100); //设置滑块位置的最大值和最小值
 	m_speedCtrl.SetPos(38);     //设置滑块的默认当前位置
@@ -452,6 +456,20 @@ void MapDlg::newMap(CDC *pDC, CRect &rectPicture)
 	ArMap armap;             
 	char* oldMapName = "2D_MAP.map";
 	armap.readFile(oldMapName);
+
+	//------------------------------- TEST SPACE --------------------------------//
+
+	/*//ArMapInfo mi;
+	const char* a = "Cairn:";
+	//mi.CAIRN_INFO;
+	ArMapObjects mp;
+	
+	//mi.getMapInfo();
+	//mi.getInfo(6);
+
+	mp.findMapObject(a);*/
+
+	//------------------------------- ---------- --------------------------------//
 
 	newBrush.CreateSolidBrush(RGB(255,255,255));   
 	pOldBrush = pDC->SelectObject(&newBrush);   
@@ -738,6 +756,24 @@ void getPath(ArNetPacket* packet)
 //--------------//
 
 
+//----- Get localization points -----//
+void getLocPoints(ArNetPacket* packet)
+{
+	int locPoint_num=0,locPoint_x[200],locPoint_y[200];
+
+	locPoint_num=packet->bufToByte2();
+
+		for(int l=0;l<locPoint_num;l++)
+		{
+		locPoint_x[l]=packet->bufToByte4();
+		locPoint_y[l]=packet->bufToByte4();
+		}
+
+	fflush(stdout);
+}
+//--------------//
+
+
 //---------- Mouse coordinate ----------//
 void CChinaMobileDlg::OnLButtonDblClk()
 {
@@ -858,6 +894,9 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 
 	ArGlobalFunctor1<ArNetPacket *> getPathCB(&getPath);
 	client.addHandler("getPath",&getPathCB);
+
+	ArGlobalFunctor1<ArNetPacket *> getLocPointsCB(&getLocPoints);
+	client.addHandler("getLocPoints",&getLocPointsCB);
 
 	/* sending requests to server */
 	client.requestOnce("getMapName");
@@ -1069,6 +1108,9 @@ for(vector<ArLineSegment>::iterator itD = GoalPose.getLines()->begin();itD != Go
 
 			taskReq.strToBuf(task_Goal);
 			client.requestOnce("gotoGoal",&taskReq);
+
+			client.request("getLocPoints",1000);
+
 				while(flag != 5)
 				{
 				tLoop = tLoop + 1;
@@ -1083,7 +1125,10 @@ for(vector<ArLineSegment>::iterator itD = GoalPose.getLines()->begin();itD != Go
 
 					if(ls_handler!='G' && ls_handler!='C' && ls_handler!='F' || flag == 5) 
 					{
-					goto outside_tk;
+						if(local_Status == "" || flag == 5)
+						{
+							goto outside_tk;
+						}
 					}
 				}
 			outside_tk:
@@ -1112,6 +1157,7 @@ for(vector<ArLineSegment>::iterator itD = GoalPose.getLines()->begin();itD != Go
 //---------- Refresh real time data ----------//
 void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 {
+	int heartBeat_count = 0;
 	std::string bodyTochar;
 	CRect rectPicture; 
 	CString cmccTaskStatue, cmssTaskLog;
@@ -1299,19 +1345,22 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 				}
 		
 		//--- wait a few second here and continue heart beat test ---//
-		//Sleep(30000); 
+		Sleep(15000); 
 
 			//--- 心跳，状态查询---//
 			if(heartBeat_flag == 1)
 			{
+			heartBeat_testAgain:
+
 			heartBeatS_str = "heartBeat test...";
 			bodyTochar.clear();
 			conHeartBeatReqBody(bodyTochar);
 			data_heartBeat = curl_http_post("http://218.206.179.233:9999/ctp_testbed/testbed/testbedHeartbeat.do", bodyTochar.c_str());
 			parseHeartBeatRespBody(data_heartBeat->data);
 			heartBeat_flag = 0;
+			heartBeat_count = heartBeat_count + 1;
 			}
-
+			
 				/* ---------------------------- *
 				 * state定义：                  *
 				 * 测试准备：101  ready         *
@@ -1320,60 +1369,91 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 				 * 用例已下发：104   waiting    *
 				 * 执行异常：404     abnormal   *
 				 * ---------------------------- *
-				 */
+				 */ 
+				//103 /404 finish
+				if(heartBeat_status != 200 && heartBeat_status != 500)
+				{
+					end_flag = 0;
+					heartBeat_status = 0;
+					heartBeatE_str="heartBeat test ERROR";
+				}
 
+				if(heartBeat_status == 500)
+				{
+					end_flag = 0;
+					heartBeat_status = 0;
+					endE_str="heartBeat test FAILD!";
+				}
+
+				/* ---------------------- *
+				 * Heart beat tests begin *
+				 * ---------------------- *
+				 */
 				if(heartBeat_status == 200)
 				{
 					if(heartBeat_state == "101") //就绪
 					{
-					end_flag = 0;
-					heartBeat_state = "";
-					heartBeatE_str="heartBeat test READY";
+						end_flag = 0;
+						heartBeat_state = "";
+						heartBeatE_str="heartBeat test READY";
+
+						Sleep(1000);
+						if(heartBeat_count == 300)goto heartBeat_out;
+						goto heartBeat_testAgain;
 					}
 
 					if(heartBeat_state == "102") //正在运行 
 					{
-					end_flag = 0;
-					heartBeat_state = "";
-					heartBeatE_str="heartBeat test RUNNING";
-					}
+						end_flag = 0;
+						heartBeat_state = "";
+						heartBeatE_str="heartBeat test RUNNING";
 
-					if(heartBeat_state == "103") //完成测试
-					{
-					end_flag = 1;
-					heartBeat_state = "";
-					heartBeatE_str="heartBeat test DONE";
+						Sleep(1000);
+						if(heartBeat_count == 300)goto heartBeat_out;
+						goto heartBeat_testAgain;
 					}
 
 					if(heartBeat_state == "104") //等待
 					{
-					end_flag = 0;
-					heartBeat_state = "";
-					heartBeatE_str="heartBeat test WAIT";
+						end_flag = 0;
+						heartBeat_state = "";
+						heartBeatE_str="heartBeat test WAIT";
+
+						Sleep(1000);
+						if(heartBeat_count == 300)goto heartBeat_out;
+						goto heartBeat_testAgain;
 					}
 
-					if(heartBeat_state == "404") //异常
+					else
 					{
-					end_flag = 0;
-					heartBeat_state = "";
-					heartBeatE_str="heartBeat test ABNORMAL";
+						if(heartBeat_state == "103" || heartBeat_state == "404")
+						{
+
+							if(heartBeat_state == "103") //完成测试
+							{
+								end_flag = 1;
+								heartBeat_state = "";
+								heartBeatE_str="heartBeat test DONE";
+
+								goto heartBeat_out;
+							}
+
+							if(heartBeat_state == "404") //异常
+							{
+								end_flag = 1;
+								heartBeat_state = "";
+								heartBeatE_str="heartBeat test ABNORMAL";
+
+								goto heartBeat_out;
+							}
+
+						end_flag = 1;
+						heartBeat_state = "";
+						heartBeatE_str="heartBeat state ERROR";
+						}
 					}
 				}
-
-				else if(heartBeat_status == 500)
-				{
-				end_flag = 0;
-				heartBeat_status = 0;
-				endE_str="heartBeat test FAILD!";
-				}
-				
-				else
-				{
-				end_flag = 0;
-				heartBeat_status = 0;
-				heartBeat_state = "";
-				heartBeatE_str="heartBeat test ERROR";
-				}
+				heartBeat_out:
 
 
 			//--- 测试结束---//
@@ -1418,7 +1498,7 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
 			+ statusS_str+"\r\n"+statusE_str +"\r\n"
 			+ testS_str+"\r\n"+testE_str +"\r\n"
-			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n"
+			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
 			+ endS_str+"\r\n"+endE_str;
 
 		m_log.SetWindowText(cmccTaskStatue);
@@ -1755,14 +1835,21 @@ int CChinaMobileDlg::conRepTestStatusReqBody(std::string &reqbody)
 
 		arrayObj["testbed"]=(item1);   
 
-	Json::Value item2;
+	Json::Value item2, item3;
 
-        item2["sn"]="359850055919935";    
+		//--- device 2---//
+        item2["sn"]="863753029609468";    //device 2 appID
 
         item2["appid"]="3305642b89025d0d721cae224f082ef0";
 		                
-
 		arrayObj["devices"].append(item2);  
+
+		//--- device 3---//
+		/*item3["sn"]="357140050453037";    //device 3 appID
+
+		item3["appid"]="3305642b89025d0d721cae224f082ef0";
+
+		arrayObj["devices"].append(item3);  */
 
 	/*Json::Value item3;
 
@@ -1907,11 +1994,11 @@ int CChinaMobileDlg::parseHeartBeatRespBody(char* respbody) //(char* respbody,st
 	{                                                                                                                               
 		                                                                                                                              
 		std::string message=value["message"].asString();                                                                                     
-		std::cout<<message<<std::endl;
+		//std::cout<<message<<std::endl;
 
 		int status=value["status"].asInt();  
 		heartBeat_status=status;
-		std::cout<<status<<std::endl;
+		//std::cout<<status<<std::endl;
 		
 		Json::Value jsonObj=value["detail"];//迭代器  
 

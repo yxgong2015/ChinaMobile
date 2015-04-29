@@ -1,5 +1,5 @@
 /* -------------------------------------------------------- *
- * Last modification date 2015/04/28 19:14  by: Xiaoxi Gong *
+ * Last modification date 2015/04/30 02:58  by: Xiaoxi Gong *
  * -------------------------------------------------------- *
 */
 #include "stdafx.h"
@@ -30,11 +30,12 @@ int laserReadingNo=0,laserReadingX[512],laserReadingY[512],pathReadingNo=0,pathR
 int flag=0,tFlag=0,mapDataCount=0,staticMapX1[102400],staticMapY1[102400],staticMapX2[102400],staticMapY2[102400];
 double tempX=0,tempY=0,tempA=0,tempB=0,tempV=0,mousePoseX=0,mousePoseY=0,mousePoseTh=0,localScore=0;
 float zoomMap=0,shiftX=0,shiftY=0,robot_Th=0, windowMinX=3,windowMinY=4, windowMaxX=481,windowMaxY=371;
-float nmX_max=0,nmX_min=0,nmY_max=0,nmY_min=0;
+float nmX_max=0,nmX_min=0,nmY_max=0,nmY_min=0, x_new=0,x_itr=0.65;
 bool safedrive=0, grid=0;
 char ls_handler;
 
-int task_begin=0,TaskNo=0, redPath=111,greenPath=111,bluePath=111, taskSUS_flag = 0, nLineCount=0;
+int task_begin=0,TaskNo=0, redPath=111,greenPath=111,bluePath=111, taskSUS_flag = 0, nLineCount=0, x_id=0, id_flag=0;
+int flag_flag=0;
 
 //Status：返回状态，200：运行正常，500运行异常 
 //Licensestate：证书状态, 200合法,404非法      
@@ -61,8 +62,11 @@ std::string heartBeat_state;
 //Status：返回状态，200：运行正常，500运行异常
 int end_flag=0, end_status=STATUS;
 
+CString taskDone;
+CString a,b,c,d,e;
+
 CString G_Warning,Global_IP,Goal_name,Goal_list,local_Status,map_name,task_Goal,scan_MapName;
-CString cmccTaskStatue, cmccTaskDetail;
+CString cmccTaskStatue, cmccTaskDetail, taskID_str;
 std::vector<ArLineSegment> sMap;
 
 
@@ -118,8 +122,7 @@ CChinaMobileDlg::CChinaMobileDlg(CWnd* pParent /*=NULL*/)
 
 	//--- random number ---//
 
-
-	memcpy(taskID,"12315k",sizeof("12312a")); // taskID should less than 50 byte
+	//memcpy(taskID,"12315k",sizeof("12312a")); // taskID should less than 50 byte
 }
 
 void CChinaMobileDlg::DoDataExchange(CDataExchange* pDX)
@@ -221,7 +224,7 @@ BOOL CChinaMobileDlg::OnInitDialog()
 	// TODO: 在此添加额外的初始化代码
 	SetTimer(1, TM, NULL);  // set TIMER 
 
-	m_IP.SetAddress(192,168,244,128);//(192,168,11,24);//(192,168,213,115);
+	m_IP.SetAddress(192,168,11,24);//(192,168,244,128)//(192,168,213,115)
 
 	m_speedCtrl.SetRange(0,100); //设置滑块位置的最大值和最小值
 	m_speedCtrl.SetPos(38);     //设置滑块的默认当前位置
@@ -1131,6 +1134,22 @@ for(vector<ArLineSegment>::iterator itD = GoalPose.getLines()->begin();itD != Go
 							goto outside_tk;
 						}
 					}
+
+
+					/* ------------------------------------------------------- *
+					 * If faild going to Goal, robot stops then, wandering for *
+					 * a short while, then, try the Goal again...              *
+					 * ------------------------------------------------------- *
+					 */
+					if(ls_handler == 'F' || flag == 5)
+						{
+							client.requestOnce("stop");
+							client.requestOnce("wander");
+							ArUtil::sleep(10000);
+							client.requestOnce("stop");
+							client.requestOnce("gotoGoal",&taskReq);
+						}
+
 				}
 			outside_tk:
 			client.requestOnce("stop");
@@ -1162,8 +1181,6 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 	std::string bodyTochar;
 	CString cmssTaskLog;
 	curlData *data_logIn, *data_testStatus, *data_startTest, *data_heartBeat, *data_endTest;	
-
-	CString str_time; //获取系统时间
 	CTime tm_sys;
 
 	while(1)
@@ -1172,12 +1189,13 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 		if(ls_handler!='G' && ls_handler!='F' && tFlag==99)
 		{
 		tFlag=0;
-		CString loginS_str,loginE_str,login_ERROR,login_ERROR_1,login_ERROR_2,login_ERROR_3;;
 
+		CString loginS_str,loginE_str,login_ERROR,login_ERROR_1,login_ERROR_2,login_ERROR_3;
 		CString statusS_str,statusE_str;
 		CString testS_str,testE_str;
 		CString heartBeatS_str,heartBeatE_str;
 		CString endS_str,endE_str;
+		CString str_time; //获取系统时间
 		
 		//--- if reach the goal, robot starts following CMCC tasks ---//
 		//ShellExecute(this->m_hWnd,"open","http://www.baidu.com","","", SW_SHOW );
@@ -1197,11 +1215,13 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 				if(login_status != 0 || login_licenState != "" || login_userState != "")
 				{
+				flag_flag=11;
 				status_flag=0;
 				loginE_str="login FAILD!";
 
 					if(login_status == 200 && login_licenState == "100" && login_userState == "200")
 					{
+						flag_flag=10;
 						status_flag=1;
 						loginE_str="login SUCCESS!";
 					}
@@ -1227,6 +1247,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 				else
 				{
+				flag_flag=11;
 				status_flag=0;
 				login_status = 0;
 				login_licenState = "";
@@ -1248,6 +1269,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 		
 				if(status_status == 200)
 				{
+				flag_flag=20;
 				test_flag=1;
 				status_status = 0;
 				statusE_str="report status SUCCESS!";
@@ -1255,6 +1277,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 				else if(status_status == 500)
 				{
+				flag_flag=21;
 				test_flag=0;
 				status_status = 0;
 				statusE_str="report status FAILD!";
@@ -1262,6 +1285,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 				else
 				{
+				flag_flag=21;
 				test_flag=0;
 				status_status = 0;
 				statusE_str="report status ERROR!";
@@ -1281,6 +1305,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 		
 				if(test_status == 200)
 				{
+				flag_flag=30;
 				heartBeat_flag=1;
 				test_status = 0;
 				testE_str = "testing SUCCESS!";
@@ -1288,6 +1313,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 				else if(test_status == 500)
 				{
+				flag_flag=31;
 				heartBeat_flag=0;
 				test_status = 0;
 				testE_str = "testing FAILD!";
@@ -1295,6 +1321,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 				else
 				{
+				flag_flag=31;
 				heartBeat_flag=0;
 				test_status = 0;
 				testE_str = "testing ERROR!";
@@ -1306,7 +1333,6 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 			if(heartBeat_flag == 1)
 			{
 			heartBeat_testAgain:
-
 			heartBeatS_str = "heartBeat test...";
 			bodyTochar.clear();
 			//cg.conHeartBeatReqBody(bodyTochar);
@@ -1328,6 +1354,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 				//103 /404 finish
 				if(heartBeat_status != 200 && heartBeat_status != 500)
 				{
+					flag_flag=41;
 					end_flag = 0;
 					heartBeat_status = 0;
 					heartBeatE_str="heartBeat test ERROR";
@@ -1335,6 +1362,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 				if(heartBeat_status == 500)
 				{
+					flag_flag=41;
 					end_flag = 0;
 					heartBeat_status = 0;
 					endE_str="heartBeat test FAILD!";
@@ -1386,6 +1414,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 							if(heartBeat_state == "103") //完成测试
 							{
+								flag_flag=40;
 								end_flag = 1;
 								heartBeat_state = "";
 								heartBeatE_str="heartBeat test DONE";
@@ -1395,6 +1424,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 							if(heartBeat_state == "404") //异常
 							{
+								flag_flag=404;
 								end_flag = 1;
 								heartBeat_state = "";
 								heartBeatE_str="heartBeat test ABNORMAL";
@@ -1424,6 +1454,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 			
 				if(end_status == 200)
 				{
+				flag_flag=50;
 				taskSUS_flag = 1;
 				end_status = 0;
 				endE_str="ending SUCCESS!";
@@ -1431,6 +1462,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 				else if(end_status == 500)
 				{
+				flag_flag=51;
 				taskSUS_flag = 2;
 				end_status = 0;
 				endE_str="ending FAILD!";
@@ -1438,41 +1470,57 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 				else
 				{
+				flag_flag=51;
 				taskSUS_flag = 3;
 				end_status = 0;
 				endE_str="ending ERROR!";
 				}
+			Sleep(3000);
+
+		TaskNo = TaskNo + 1; // line + 1
+		flag = 31; // get the next line of GOAL, then repeat tasks
+
+			if(TaskNo == nLineCount && TaskNo!=0 && nLineCount!=0)
+			{
+				TaskNo=0;
+				flag = 5;
+				taskDone="Complete all tasks!";
+			}
 
 		//--- end CMCC tasks ---//
 		tm_sys=CTime::GetCurrentTime();   
 		str_time=tm_sys.Format("%Y_%m_%d_%X");
 
 
-		cmccTaskStatue = str_time +"\r\n"+"Arriving to: \r\n" + task_Goal+"\r\n" 
+		/*cmccTaskStatue = str_time +"\r\n"+"Arriving to: \r\n" + task_Goal+"\r\n" 
 			+ "sending POST to server..."+"\r\n"
 			+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
 			+ statusS_str+"\r\n"+statusE_str +"\r\n"
 			+ testS_str+"\r\n"+testE_str +"\r\n"
 			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
-			+ endS_str+"\r\n"+endE_str;
+			+ endS_str+"\r\n"+endE_str;*/
 
-
-		cmccTaskDetail = str_time +"\r\n"+"pioneer-lx reaches to: \r\n" + task_Goal +"\r\n" 
+		
+		cmccTaskDetail = str_time +"\r\n" + "task ID is: " + taskID_str +"\r\n"
+			+"pioneer-lx reaches to: \r\n" + task_Goal +"\r\n" 
 			+ "sending POST request to server..." +"\r\n"
 			+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
 			+ statusS_str+"\r\n"+statusE_str +"\r\n"
 			+ testS_str+"\r\n"+testE_str +"\r\n"
 			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
-			+ endS_str+"\r\n"+endE_str +"\r\n";
+			+ endS_str+"\r\n"+endE_str +"\r\n"
+			+ taskDone +"\r\n";
 
 
-		TaskNo = TaskNo + 1; // line + 1
-		flag = 31; // get the next line of GOAL, and doing same task
+		/*TaskNo = TaskNo + 1; // line + 1
+		flag = 31; // get the next line of GOAL, then repeat tasks
 
-			if(TaskNo > nLineCount)
+			if(TaskNo == nLineCount && TaskNo!=0 && nLineCount!=0)
 			{
-			flag = 0;
-			}
+				TaskNo=0;
+				flag = 5;
+				taskDone="Complete all tasks!";
+			}*/
 
 		goto outTask;
 		}
@@ -1534,12 +1582,12 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 	m_mapName=map_name;
 	UpdateData(false);
 
-	if(m_safeDrive.GetCheck()){safedrive=true;}
-	else{safedrive=false;}
-	if(m_grid.GetCheck()){grid=true;}
-	else{grid=false;}
-	if(flag==12 || flag==14){OnLButtonDblClk();}
-	if(flag==11){m_goal.GetWindowText(Goal_name);}
+		if(m_safeDrive.GetCheck()){safedrive=true;}
+		else{safedrive=false;}
+		if(m_grid.GetCheck()){grid=true;}
+		else{grid=false;}
+		if(flag==12 || flag==14){OnLButtonDblClk();}
+		if(flag==11){m_goal.GetWindowText(Goal_name);}
 
 	//--- draw points on Picture Control zone ---//
 	/* 客户区坐标以窗口的左上角为原点，这区别于以屏幕左上角为原点的屏幕坐标 */ 	
@@ -1565,24 +1613,82 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 		strText.ReleaseBuffer(len);
 			
 		task_begin = 1; // jump to MainThread "CMCC task" and doing path planning task
-		flag = 0;	
+		flag = 0;
+		flag_flag = 0;
 		}
 		
 		if(taskSUS_flag == 1 || taskSUS_flag == 2 || taskSUS_flag == 3)
 		{
-			m_log.SetWindowText(cmccTaskStatue);
+			//m_log.SetWindowText(cmccTaskStatue);
 			//--- record the data in text file ---//
 			//using namespace std;
 			std::ofstream write_task;
 
 			write_task.open("CMCC_TASK.txt",std::ios::app);
-			write_task<<cmccTaskStatue;
+			write_task<<cmccTaskDetail;
 			write_task<<std::endl;
 			write_task.close(); 
 
 			taskSUS_flag = 99;
 		}
 		//--------------//
+
+
+		if(flag_flag==10 || flag_flag==20 || flag_flag==30 || flag_flag==40 || flag_flag==50 ||
+			flag_flag==11 || flag_flag==21 || flag_flag==31 || flag_flag==41 || flag_flag==404 || flag_flag==51)
+		{
+
+			if(flag_flag==10)a="login DONE!";
+			if(flag_flag==11)a="login FAILD!";
+			
+			if(flag_flag==20)b="report DONE!";
+			if(flag_flag==21)b="report FAILD!";
+
+			if(flag_flag==30)c="test DONE!";
+			if(flag_flag==31)c="test FAILD!";
+			
+			if(flag_flag==40)d="heart beat DONE!";
+			if(flag_flag==404)d="heart beat DONE with 404!";
+			if(flag_flag==41)d="heart beat FAILD!";
+			
+			if(flag_flag==50)e="end test DONE!";
+			if(flag_flag==51)e="end FAILD!";
+
+			//if(flag_flag==60)e="task cycle DONE!";
+
+		cmccTaskStatue= "Perform tasks now... \r\n"+a+"\r\n"+b+"\r\n"+c+"\r\n"+d+"\r\n"+e+"\r\n";
+		m_log.SetWindowText(cmccTaskStatue);
+		
+		//flag_flag = 0;
+		}
+
+		if(flag_flag==0 && id_flag==1)
+		{
+			a="";
+			b="";
+			c="";
+			d="";
+			e="";
+			cmccTaskStatue= "Perform tasks now... \r\n"+a+"\r\n"+b+"\r\n"+c+"\r\n"+d+"\r\n"+e+"\r\n";
+			m_log.SetWindowText(cmccTaskStatue);
+		}
+
+
+
+
+
+		//--- random number ---//
+		if(id_flag == 0)
+		{
+			x_new=3.9*x_itr*(1-x_itr);
+			x_itr=x_new;
+		}
+
+	x_id=int(x_new*1000000);
+	sprintf(taskID,"%d",x_id);
+	taskID_str = taskID;
+	//memcpy(taskID,x_array,sizeof(x_array)); // taskID should less than 50 byte
+	//memset(taskID,0,sizeof(taskID));
 	
 	CDialogEx::OnTimer(nIDEvent);
 }
@@ -2268,6 +2374,7 @@ void CChinaMobileDlg::OnBnClickedButton6()
 void CChinaMobileDlg::OnBnClickedButton7()
 {
 	flag=5; // stop
+	id_flag=0;
 	TaskNo = 0;
 }
 
@@ -2434,7 +2541,7 @@ void CChinaMobileDlg::OnNMCustomdrawSlider1(NMHDR *pNMHDR, LRESULT *pResult)
 void CChinaMobileDlg::OnBnClickedButton16()
 {
 	flag=31; // CMCC task starts
-
+	id_flag=1;
 	AfxBeginThread(AuxThread, this);
 
 	//--- following program can capture each line's text in Edit Ccontrol ---//

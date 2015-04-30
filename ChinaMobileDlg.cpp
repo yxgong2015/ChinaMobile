@@ -34,8 +34,9 @@ float nmX_max=0,nmX_min=0,nmY_max=0,nmY_min=0, x_new=0,x_itr=0.65;
 bool safedrive=0, grid=0;
 char ls_handler;
 
-int task_begin=0,TaskNo=0, redPath=111,greenPath=111,bluePath=111, taskSUS_flag = 0, nLineCount=0, x_id=0, id_flag=0;
-int flag_flag=0;
+int task_begin=0,TaskNo=0, redPath=151,greenPath=151,bluePath=151, taskSUS_flag = 0, nLineCount=0, x_id=0, id_flag=0;
+int flag_flag=0, taskGoal_countG=0, taskGoal_countR=0, taskGoal_countY=0;
+int taskGoal_green[2][50], taskGoal_red[2][50], taskGoal_yellow[2][50];
 
 //Status：返回状态，200：运行正常，500运行异常 
 //Licensestate：证书状态, 200合法,404非法      
@@ -64,6 +65,13 @@ int end_flag=0, end_status=STATUS;
 
 CString taskDone;
 CString a,b,c,d,e;
+
+CString loginS_str,loginE_str,login_ERROR,login_ERROR_1,login_ERROR_2,login_ERROR_3;
+CString statusS_str,statusE_str;
+CString testS_str,testE_str;
+CString heartBeatS_str,heartBeatE_str;
+CString endS_str,endE_str;
+CString str_time; //获取系统时间
 
 CString G_Warning,Global_IP,Goal_name,Goal_list,local_Status,map_name,task_Goal,scan_MapName;
 CString cmccTaskStatue, cmccTaskDetail, taskID_str;
@@ -595,6 +603,93 @@ void MapDlg::newMapBot(CDC *pDC, CRect &rectPicture)
 //--------------//
 
 
+/* ------------------------------------------------------ * 
+ * CMCC tasks need plot goals on MAP with different color *
+ * which could indicate test statue...                    *
+ * ------------------------------------------------------ *
+*/
+void MapDlg::taskGoals(CDC *pDC, CRect &rectPicture)
+{
+	float X_afterTrans=0,Y_afterTrans=0,shfX_min=0,shfY_min=0,shfX_max=0,shfY_max=0;
+	float deltaX=0,deltaY=0,X_afterTransDvt=0,Y_afterTransDvt=0, redX1=0,redY1=0;
+
+	CPen newPen_red, newPen_green, newPen_yellow;        // 用于创建新画笔  
+	CPen *pOldPen_red, *pOldPen_green, *pOldPen_yellow;  // 用于存放旧画笔
+
+	X_afterTrans=fabs(nmX_max) + fabs(nmX_min);
+	Y_afterTrans=fabs(nmY_max) + fabs(nmY_min);
+
+	shfX_max=nmX_max+X_afterTrans;
+	shfY_max=nmY_max+Y_afterTrans;
+	shfX_min=nmX_min+X_afterTrans;
+	shfY_min=nmY_min+Y_afterTrans;
+
+	X_afterTransDvt = shfX_max - shfX_min;
+	Y_afterTransDvt = shfY_max - shfY_min;
+
+	deltaX = rectPicture.Width()/X_afterTransDvt;
+	deltaY = rectPicture.Height()/Y_afterTransDvt;
+
+	//botX1 = (tempX+X_afterTrans-shfX_min)*deltaX;
+	//botY1 = -(tempY+Y_afterTrans-shfY_min)*deltaY + Y_afterTransDvt*deltaY;
+
+	//----------------- green color iindicates SUCCESS ------------------//
+	/*newPen_green.CreatePen(PS_SOLID, 6, RGB(0,249,0)); 
+	pOldPen_green = pDC->SelectObject(&newPen_green);    
+
+	taskGoal_green[50]
+
+
+	pDC->MoveTo(botX1,botY1);
+	pDC->LineTo(botX1,botY1);
+		
+	pDC->SelectObject(pOldPen_green);   
+	newPen_green.DeleteObject(); */
+    //----------------- yellow color iindicates DONE anyway ------------------//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//----------------- red color iindicates FAILD ------------------//
+	newPen_red.CreatePen(PS_SOLID, 8, RGB(249,0,0)); 
+	pOldPen_red = pDC->SelectObject(&newPen_red);    
+
+		for(int tr=0;tr<50;tr++)
+		{
+			redX1 = (taskGoal_red[0][tr]+X_afterTrans-shfX_min)*deltaX;
+			redY1 = -(taskGoal_red[1][tr]+Y_afterTrans-shfY_min)*deltaY + Y_afterTransDvt*deltaY;
+
+			pDC->MoveTo(redX1,redY1);
+			pDC->LineTo(redX1,redY1);
+		}
+		
+	pDC->SelectObject(pOldPen_red);   
+	newPen_red.DeleteObject();
+
+
+
+	ReleaseDC(pDC);
+}
+//--------------//
+
+
 //--------- get MAP name ---------//
 void getMapName(ArNetPacket* packet)
 {
@@ -1117,19 +1212,19 @@ for(vector<ArLineSegment>::iterator itD = GoalPose.getLines()->begin();itD != Go
 
 				while(flag != 5)
 				{
-				tLoop = tLoop + 1;
+				//tLoop = tLoop + 1;
 				ArUtil::sleep(500);
 
-					if(tLoop == 12) // normal color draws on screen is gray
+					/*if(tLoop == 12) // normal color draws on screen is gray
 					{
 					redPath=111;
 					greenPath=111;
 					bluePath=111;
-					}
+					}*/
 
-					if(ls_handler!='G' && ls_handler!='C' && ls_handler!='F' || flag == 5) 
+					if(ls_handler!='G' && ls_handler!='C' && ls_handler!='F' || flag == 5 || tLoop == 3) 
 					{
-						if(local_Status == "" || flag == 5)
+						if(local_Status == "" || flag == 5 || tLoop == 3)
 						{
 							goto outside_tk;
 						}
@@ -1141,13 +1236,15 @@ for(vector<ArLineSegment>::iterator itD = GoalPose.getLines()->begin();itD != Go
 					 * a short while, then, try the Goal again...              *
 					 * ------------------------------------------------------- *
 					 */
-					if(ls_handler == 'F' || flag == 5)
+					if(ls_handler == 'F' || ls_handler == 'C'  || flag == 5)
 						{
 							client.requestOnce("stop");
 							client.requestOnce("wander");
-							ArUtil::sleep(10000);
+							ArUtil::sleep(6000);
 							client.requestOnce("stop");
 							client.requestOnce("gotoGoal",&taskReq);
+
+							tLoop = tLoop + 1;
 						}
 
 				}
@@ -1181,7 +1278,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 	std::string bodyTochar;
 	CString cmssTaskLog;
 	curlData *data_logIn, *data_testStatus, *data_startTest, *data_heartBeat, *data_endTest;	
-	CTime tm_sys;
+	//CTime tm_sys;
 
 	while(1)
 	{
@@ -1190,12 +1287,12 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 		{
 		tFlag=0;
 
-		CString loginS_str,loginE_str,login_ERROR,login_ERROR_1,login_ERROR_2,login_ERROR_3;
+		/*CString loginS_str,loginE_str,login_ERROR,login_ERROR_1,login_ERROR_2,login_ERROR_3;
 		CString statusS_str,statusE_str;
 		CString testS_str,testE_str;
 		CString heartBeatS_str,heartBeatE_str;
 		CString endS_str,endE_str;
-		CString str_time; //获取系统时间
+		CString str_time; //获取系统时间*/
 		
 		//--- if reach the goal, robot starts following CMCC tasks ---//
 		//ShellExecute(this->m_hWnd,"open","http://www.baidu.com","","", SW_SHOW );
@@ -1488,8 +1585,8 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 			}
 
 		//--- end CMCC tasks ---//
-		tm_sys=CTime::GetCurrentTime();   
-		str_time=tm_sys.Format("%Y_%m_%d_%X");
+		/*tm_sys=CTime::GetCurrentTime();   
+		str_time=tm_sys.Format("%Y_%m_%d_%X");*/
 
 
 		/*cmccTaskStatue = str_time +"\r\n"+"Arriving to: \r\n" + task_Goal+"\r\n" 
@@ -1501,7 +1598,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 			+ endS_str+"\r\n"+endE_str;*/
 
 		
-		cmccTaskDetail = str_time +"\r\n" + "task ID is: " + taskID_str +"\r\n"
+		/*cmccTaskDetail = str_time +"\r\n" + "task ID is: " + taskID_str +"\r\n"
 			+"pioneer-lx reaches to: \r\n" + task_Goal +"\r\n" 
 			+ "sending POST request to server..." +"\r\n"
 			+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
@@ -1509,7 +1606,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 			+ testS_str+"\r\n"+testE_str +"\r\n"
 			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
 			+ endS_str+"\r\n"+endE_str +"\r\n"
-			+ taskDone +"\r\n";
+			+ taskDone +"\r\n";*/
 
 
 		/*TaskNo = TaskNo + 1; // line + 1
@@ -1526,7 +1623,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 		}
 	outTask:
 
-		if(taskSUS_flag == 1) // if POST success, and get "200" feedback, plot the GREEN sign on the map 
+		/*if(taskSUS_flag == 1) // if POST success, and get "200" feedback, plot the GREEN sign on the map 
 		{
 		redPath=0;
 		greenPath=245;
@@ -1542,20 +1639,13 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 		taskSUS_flag = 0;
 		}
 
-		/*if(taskSUS_flag == 0) // if ERROR, and get "0" feedback, plot the YELLOW sign on the map 
+		if(taskSUS_flag == 0) // if ERROR, and get "0" feedback, plot the YELLOW sign on the map 
 		{
 		redPath=0;
 		greenPath=245;
 		bluePath=245;
 		taskSUS_flag = 0;
 		}*/
-
-
-
-
-
-
-
 
 
 		Sleep(1000);
@@ -1629,7 +1719,32 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			write_task<<std::endl;
 			write_task.close(); 
 
-			taskSUS_flag = 99;
+				//------------- task goals record -------------//
+				if(taskSUS_flag == 1) // status 200
+				{
+					taskGoal_green[0][taskGoal_countG] = tempX;
+					taskGoal_green[1][taskGoal_countG] = tempY;
+
+					taskGoal_countG = taskGoal_countG + 1;
+				}
+
+				if(taskSUS_flag == 2) // status 500
+				{
+					taskGoal_yellow[0][taskGoal_countY] = tempX;
+					taskGoal_yellow[1][taskGoal_countY] = tempY;
+
+					taskGoal_countY = taskGoal_countY + 1;
+				}
+
+				if(taskSUS_flag == 3) // status error
+				{
+					taskGoal_red[0][taskGoal_countR] = tempX;
+					taskGoal_red[1][taskGoal_countR] = tempY;
+
+					taskGoal_countR = taskGoal_countR + 1;
+				}
+
+			taskSUS_flag = 0;
 		}
 		//--------------//
 
@@ -1699,16 +1814,30 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 void MapDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	CRect rectPicture;
+	CTime tm_sys;
 
 		switch(nIDEvent)
 		{
 			case 2: m_newMapDisplay.GetClientRect(&rectPicture); 
 					newMapBot(m_newMapDisplay.GetDC(), rectPicture);
+					taskGoals(m_newMapDisplay.GetDC(), rectPicture);
 					break;
 		}
 
-		if(taskSUS_flag == 99)
+		if(taskSUS_flag == 1 || taskSUS_flag == 2 || taskSUS_flag == 3)
 		{
+			tm_sys=CTime::GetCurrentTime();   
+			str_time=tm_sys.Format("%Y_%m_%d_%X");
+			cmccTaskDetail = str_time +"\r\n" + "task ID is: " + taskID_str +"\r\n"
+							+"pioneer-lx reaches to: \r\n" + task_Goal +"\r\n" 
+							+ "sending POST request to server..." +"\r\n"
+							+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
+							+ statusS_str+"\r\n"+statusE_str +"\r\n"
+							+ testS_str+"\r\n"+testE_str +"\r\n"
+							+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
+							+ endS_str+"\r\n"+endE_str +"\r\n"
+							+ taskDone +"\r\n";
+
 			m_taskLog.SetWindowText(cmccTaskDetail);
 			taskSUS_flag = 0;
 		}

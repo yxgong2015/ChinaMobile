@@ -1,5 +1,5 @@
 /* -------------------------------------------------------- *
- * Last modification date 2015/04/30 02:58  by: Xiaoxi Gong *
+ * Last modification date 2015/05/04 15:11  by: Xiaoxi Gong *
  * -------------------------------------------------------- *
 */
 #include "stdafx.h"
@@ -35,7 +35,7 @@ bool safedrive=0, grid=0;
 char ls_handler;
 
 int task_begin=0,TaskNo=0, redPath=151,greenPath=151,bluePath=151, taskSUS_flag = 0, nLineCount=0, x_id=0, id_flag=0;
-int flag_flag=0, taskGoal_countG=0, taskGoal_countR=0, taskGoal_countY=0;
+int flag_flag=0, taskGoal_countG=0, taskGoal_countR=0, taskGoal_countY=0, taskDone_flag=0;
 int taskGoal_green[2][50], taskGoal_red[2][50], taskGoal_yellow[2][50];
 
 //Status：返回状态，200：运行正常，500运行异常 
@@ -469,20 +469,6 @@ void MapDlg::newMap(CDC *pDC, CRect &rectPicture)
 	char* oldMapName = "2D_MAP.map";
 	armap.readFile(oldMapName);
 
-	//------------------------------- TEST SPACE --------------------------------//
-	
-	/*//ArMapInfo mi;
-	const char* a = "Cairn:";
-	//mi.CAIRN_INFO;
-	ArMapObjects mp;
-	
-	//mi.getMapInfo();
-	//mi.getInfo(6);
-
-	mp.findMapObject(a);*/
-
-	//------------------------------- ---------- --------------------------------//
-
 	newBrush.CreateSolidBrush(RGB(255,255,255));   
 	pOldBrush = pDC->SelectObject(&newBrush);   
 	pDC->Rectangle(rectPicture);   
@@ -512,25 +498,6 @@ void MapDlg::newMap(CDC *pDC, CRect &rectPicture)
 		newMapY1 = -((*it).getY1()+Y_afterTrans-shfY_min)*deltaY + Y_afterTransDvt*deltaY; //imaging of X coordination
 		newMapX2 = ((*it).getX2()+X_afterTrans-shfX_min)*deltaX;
 		newMapY2 = -((*it).getY2()+Y_afterTrans-shfY_min)*deltaY + Y_afterTransDvt*deltaY;
-
-		/*newMapX1 = ((*it).getX1()+X_afterTrans-shfX_min)*deltaX;
-		newMapY1 = ((*it).getY1()+Y_afterTrans-shfY_min)*deltaY;
-		newMapX2 = ((*it).getX2()+X_afterTrans-shfX_min)*deltaX;
-		newMapY2 = ((*it).getY2()+Y_afterTrans-shfY_min)*deltaY;*/
-		
-			/*X=fabs(armap.getLineMaxPose().getX()) + fabs(armap.getLineMinPose().getX());
-			Y=fabs(armap.getLineMaxPose().getY()) + fabs(armap.getLineMinPose().getY());
-
-			shfX=sqrt(pow(armap.getLineMaxPose().getX()+X,2) + pow(armap.getLineMinPose().getX()+X,2));
-			shfY=sqrt(pow(armap.getLineMaxPose().getY()+Y,2) + pow(armap.getLineMinPose().getY()+Y,2));
-
-			deltaX = rectPicture.Width()/shfX;
-			deltaY = rectPicture.Height()/shfY;
-
-			newMapX1 = ((*it).getX1()+X)*deltaX-100;
-			newMapY1 = ((*it).getY1()+Y)*deltaY-50;
-			newMapX2 = ((*it).getX2()+X)*deltaX-100;
-			newMapY2 = ((*it).getY2()+Y)*deltaY-50;*/
 
 		pDC->MoveTo(newMapX1, newMapY1);
 		pDC->LineTo(newMapX2, newMapY2); 
@@ -576,21 +543,6 @@ void MapDlg::newMapBot(CDC *pDC, CRect &rectPicture)
 
 	botX1 = (tempX+X_afterTrans-shfX_min)*deltaX;
 	botY1 = -(tempY+Y_afterTrans-shfY_min)*deltaY + Y_afterTransDvt*deltaY;
-
-		/*X=fabs(nmX_max) + fabs(nmX_min);
-		Y=fabs(nmY_max) + fabs(nmY_min);
-
-		shfX=sqrt(pow(nmX_max+X,2) + pow(nmX_min+X,2));
-		shfY=sqrt(pow(nmY_max+Y,2) + pow(nmY_min+Y,2));
-
-		deltaX = rectPicture.Width()/shfX;
-		deltaY = rectPicture.Height()/shfY;
-
-		botX1 = (tempX+X)*deltaX-100;
-		botY1 = (tempY+Y)*deltaY-50;*/
-	
-		/*if(botX1<windowMaxX && botX1>windowMinX &&
-			botY1<windowMaxY && botY1>windowMinY)*/
 		
 	pDC->MoveTo(botX1,botY1);
 	pDC->LineTo(botX1,botY1);
@@ -610,8 +562,8 @@ void MapDlg::newMapBot(CDC *pDC, CRect &rectPicture)
 */
 void MapDlg::taskGoals(CDC *pDC, CRect &rectPicture)
 {
-	float X_afterTrans=0,Y_afterTrans=0,shfX_min=0,shfY_min=0,shfX_max=0,shfY_max=0;
-	float deltaX=0,deltaY=0,X_afterTransDvt=0,Y_afterTransDvt=0, redX1=0,redY1=0;
+	float X_afterTrans=0,Y_afterTrans=0,shfX_min=0,shfY_min=0,shfX_max=0,shfY_max=0,X_afterTransDvt=0,Y_afterTransDvt=0;
+	float deltaX=0,deltaY=0, redX1=0,redY1=0, yellowX1=0,yellowY1=0, greenX1=0,greenY1=0;
 
 	CPen newPen_red, newPen_green, newPen_yellow;        // 用于创建新画笔  
 	CPen *pOldPen_red, *pOldPen_green, *pOldPen_yellow;  // 用于存放旧画笔
@@ -630,45 +582,51 @@ void MapDlg::taskGoals(CDC *pDC, CRect &rectPicture)
 	deltaX = rectPicture.Width()/X_afterTransDvt;
 	deltaY = rectPicture.Height()/Y_afterTransDvt;
 
-	//botX1 = (tempX+X_afterTrans-shfX_min)*deltaX;
-	//botY1 = -(tempY+Y_afterTrans-shfY_min)*deltaY + Y_afterTransDvt*deltaY;
-
-	//----------------- green color iindicates SUCCESS ------------------//
-	/*newPen_green.CreatePen(PS_SOLID, 6, RGB(0,249,0)); 
+	//----------------- green color indicates SUCCESS ------------------//
+	newPen_green.CreatePen(PS_SOLID, 9, RGB(0,249,0)); 
 	pOldPen_green = pDC->SelectObject(&newPen_green);    
 
-	taskGoal_green[50]
+		for(int tr=0;tr<50;tr++)
+		{
+			greenX1 = (taskGoal_red[0][tr]+X_afterTrans-shfX_min)*deltaX;
+			greenY1 = -(taskGoal_red[1][tr]+Y_afterTrans-shfY_min)*deltaY + Y_afterTransDvt*deltaY;
 
-
-	pDC->MoveTo(botX1,botY1);
-	pDC->LineTo(botX1,botY1);
+				if(taskGoal_green[0][tr] != 0 && taskGoal_green[1][tr] != 0)
+				{
+					pDC->MoveTo(greenX1,greenY1);
+					pDC->LineTo(greenX1,greenY1);
+				}
+		}
 		
 	pDC->SelectObject(pOldPen_green);   
-	newPen_green.DeleteObject(); */
-    //----------------- yellow color iindicates DONE anyway ------------------//
+	newPen_green.DeleteObject();
 
 
 
+    //----------------- yellow color indicates DONE anyway ------------------//
+
+	newPen_yellow.CreatePen(PS_SOLID, 9, RGB(0,249,249)); 
+	pOldPen_yellow = pDC->SelectObject(&newPen_yellow);    
+
+		for(int tr=0;tr<50;tr++)
+		{
+			yellowX1 = (taskGoal_yellow[0][tr]+X_afterTrans-shfX_min)*deltaX;
+			yellowY1 = -(taskGoal_yellow[1][tr]+Y_afterTrans-shfY_min)*deltaY + Y_afterTransDvt*deltaY;
+
+				if(taskGoal_yellow[0][tr] != 0 && taskGoal_yellow[1][tr] != 0)
+				{
+					pDC->MoveTo(yellowX1,yellowY1);
+					pDC->LineTo(yellowX1,yellowY1);
+				}
+		}
+		
+	pDC->SelectObject(pOldPen_yellow);   
+	newPen_yellow.DeleteObject();
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	//----------------- red color iindicates FAILD ------------------//
-	newPen_red.CreatePen(PS_SOLID, 8, RGB(249,0,0)); 
+	//----------------- red color indicates FAILD ------------------//
+	newPen_red.CreatePen(PS_SOLID, 9, RGB(249,0,0)); 
 	pOldPen_red = pDC->SelectObject(&newPen_red);    
 
 		for(int tr=0;tr<50;tr++)
@@ -676,8 +634,11 @@ void MapDlg::taskGoals(CDC *pDC, CRect &rectPicture)
 			redX1 = (taskGoal_red[0][tr]+X_afterTrans-shfX_min)*deltaX;
 			redY1 = -(taskGoal_red[1][tr]+Y_afterTrans-shfY_min)*deltaY + Y_afterTransDvt*deltaY;
 
-			pDC->MoveTo(redX1,redY1);
-			pDC->LineTo(redX1,redY1);
+				if(taskGoal_red[0][tr] != 0 && taskGoal_red[1][tr] != 0)
+				{
+					pDC->MoveTo(redX1,redY1);
+					pDC->LineTo(redX1,redY1);
+				}
 		}
 		
 	pDC->SelectObject(pOldPen_red);   
@@ -1037,34 +998,6 @@ UINT CChinaMobileDlg::MainThread(LPVOID lParam)
 	sMap.clear();
 	//--------//
 
-
-//--- TEST SPACE ---//
-/*
-char* oldMapData = "2D_MAP.map";
-ArMap GoalPose;
-ArMapObjects io("GoalWithHeading");
-
-
-char* gm="GoalWithHeading";
-ArMapObject mop();
-ArMapObject.getBaseType("GoalWithHeading");
-
-GoalPose.readFile(oldMapData);
-
-
-int dp=0, dataPoint_x[200], dataPoint_y[200];
-//virtual std::list< ArMapObject * > 	findMapObjectsOfType (const char *type, bool isIncludeWithHeading=false)
-
-for(vector<ArLineSegment>::iterator itD = GoalPose.getLines()->begin();itD != GoalPose.getLines()->end();itD++)
-{ 
-	dataPoint_x[dp]=mop.getPose().getX();
-	dataPoint_y[dp]=mop.getPose().getY();
-	dp=dp+1;
-}
-*/
-
-//--------//
-
 		while(client.getRunningWithLock())
 		{
 			ArNetPacket pkt, pkt_goal, pkt_map;
@@ -1208,20 +1141,14 @@ for(vector<ArLineSegment>::iterator itD = GoalPose.getLines()->begin();itD != Go
 			taskReq.strToBuf(task_Goal);
 			client.requestOnce("gotoGoal",&taskReq);
 
-			client.request("getLocPoints",1000);
+			//client.request("getLocPoints",1000);
 
+			    //------------- cmcc tasks -------------//
 				while(flag != 5)
 				{
-				//tLoop = tLoop + 1;
 				ArUtil::sleep(500);
 
-					/*if(tLoop == 12) // normal color draws on screen is gray
-					{
-					redPath=111;
-					greenPath=111;
-					bluePath=111;
-					}*/
-
+					
 					if(ls_handler!='G' && ls_handler!='C' && ls_handler!='F' || flag == 5 || tLoop == 3) 
 					{
 						if(local_Status == "" || flag == 5 || tLoop == 3)
@@ -1236,20 +1163,21 @@ for(vector<ArLineSegment>::iterator itD = GoalPose.getLines()->begin();itD != Go
 					 * a short while, then, try the Goal again...              *
 					 * ------------------------------------------------------- *
 					 */
-					if(ls_handler == 'F' || ls_handler == 'C'  || flag == 5)
+					if(ls_handler == 'F' || ls_handler == 'C')
 						{
 							client.requestOnce("stop");
 							client.requestOnce("wander");
-							ArUtil::sleep(6000);
+							ArUtil::sleep(3000);
 							client.requestOnce("stop");
 							client.requestOnce("gotoGoal",&taskReq);
 
 							tLoop = tLoop + 1;
 						}
 
-				}
+				} 
+				//------------- --------- -------------//
 			outside_tk:
-			client.requestOnce("stop");
+			//client.requestOnce("stop");
 				
 				if(flag == 5)
 				{
@@ -1283,18 +1211,12 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 	while(1)
 	{
 
-		if(ls_handler!='G' && ls_handler!='F' && tFlag==99)
+		if(tFlag==99)
 		{
-		tFlag=0;
-
-		/*CString loginS_str,loginE_str,login_ERROR,login_ERROR_1,login_ERROR_2,login_ERROR_3;
-		CString statusS_str,statusE_str;
-		CString testS_str,testE_str;
-		CString heartBeatS_str,heartBeatE_str;
-		CString endS_str,endE_str;
-		CString str_time; //获取系统时间*/
+		tFlag = 0;
+		flag = 0;
 		
-		//--- if reach the goal, robot starts following CMCC tasks ---//
+		//--- if reach the goal, robot starts executing CMCC tasks ---//
 		//ShellExecute(this->m_hWnd,"open","http://www.baidu.com","","", SW_SHOW );
 		CChinaMobileDlg cg;
 
@@ -1346,10 +1268,11 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 				{
 				flag_flag=11;
 				status_flag=0;
+				loginE_str="login ERROR!";
+
 				login_status = 0;
 				login_licenState = "";
 				login_userState = "";
-				loginE_str="login ERROR!";
 				}
 
 			Sleep(3000);
@@ -1368,24 +1291,24 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 				{
 				flag_flag=20;
 				test_flag=1;
-				status_status = 0;
 				statusE_str="report status SUCCESS!";
+				status_status = 0;
 				}
 
-				else if(status_status == 500)
+				if(status_status == 500)
 				{
 				flag_flag=21;
 				test_flag=0;
-				status_status = 0;
 				statusE_str="report status FAILD!";
+				status_status = 0;
 				}
 
-				else
+				if(status_status != 200 && status_status != 500)
 				{
 				flag_flag=21;
 				test_flag=0;
-				status_status = 0;
 				statusE_str="report status ERROR!";
+				status_status = 0;
 				}
 		
 			Sleep(3000);
@@ -1404,28 +1327,28 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 				{
 				flag_flag=30;
 				heartBeat_flag=1;
-				test_status = 0;
 				testE_str = "testing SUCCESS!";
+				test_status = 0;
 				}
 
-				else if(test_status == 500)
+				if(test_status == 500)
 				{
 				flag_flag=31;
 				heartBeat_flag=0;
-				test_status = 0;
 				testE_str = "testing FAILD!";
+				test_status = 0;
 				}
 
-				else
+				if(test_status != 200 && test_status != 500)
 				{
 				flag_flag=31;
 				heartBeat_flag=0;
-				test_status = 0;
 				testE_str = "testing ERROR!";
+				test_status = 0;
 				}
 		
 			//--- wait a few second here and continue heart beat test ---//
-			Sleep(5000);
+			Sleep(6000);
 			//--- 心跳，状态查询---//
 			if(heartBeat_flag == 1)
 			{
@@ -1453,16 +1376,16 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 				{
 					flag_flag=41;
 					end_flag = 0;
-					heartBeat_status = 0;
 					heartBeatE_str="heartBeat test ERROR";
+					heartBeat_status = 0;
 				}
 
 				if(heartBeat_status == 500)
 				{
 					flag_flag=41;
 					end_flag = 0;
-					heartBeat_status = 0;
 					endE_str="heartBeat test FAILD!";
+					heartBeat_status = 0;
 				}
 
 				/* ---------------------- *
@@ -1513,9 +1436,9 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 							{
 								flag_flag=40;
 								end_flag = 1;
-								heartBeat_state = "";
 								heartBeatE_str="heartBeat test DONE";
 
+								heartBeat_state = "";
 								goto heartBeat_out;
 							}
 
@@ -1523,13 +1446,13 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 							{
 								flag_flag=404;
 								end_flag = 1;
-								heartBeat_state = "";
 								heartBeatE_str="heartBeat test ABNORMAL";
 
+								heartBeat_state = "";
 								goto heartBeat_out;
 							}
 
-						end_flag = 1;
+						end_flag = 0;
 						heartBeat_state = "";
 						heartBeatE_str="heartBeat state ERROR";
 						}
@@ -1553,24 +1476,24 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 				{
 				flag_flag=50;
 				taskSUS_flag = 1;
-				end_status = 0;
 				endE_str="ending SUCCESS!";
+				end_status = 0;
 				}
 
-				else if(end_status == 500)
+				if(end_status == 500)
 				{
 				flag_flag=51;
 				taskSUS_flag = 2;
-				end_status = 0;
 				endE_str="ending FAILD!";
+				end_status = 0;
 				}
 
-				else
+				if(end_status != 200 && end_status != 500)
 				{
 				flag_flag=51;
 				taskSUS_flag = 3;
-				end_status = 0;
 				endE_str="ending ERROR!";
+				end_status = 0;
 				}
 			Sleep(3000);
 
@@ -1579,75 +1502,11 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 
 			if(TaskNo == nLineCount && TaskNo!=0 && nLineCount!=0)
 			{
+				taskDone_flag=1;
 				TaskNo=0;
 				flag = 5;
-				taskDone="Complete all tasks!";
 			}
-
-		//--- end CMCC tasks ---//
-		/*tm_sys=CTime::GetCurrentTime();   
-		str_time=tm_sys.Format("%Y_%m_%d_%X");*/
-
-
-		/*cmccTaskStatue = str_time +"\r\n"+"Arriving to: \r\n" + task_Goal+"\r\n" 
-			+ "sending POST to server..."+"\r\n"
-			+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
-			+ statusS_str+"\r\n"+statusE_str +"\r\n"
-			+ testS_str+"\r\n"+testE_str +"\r\n"
-			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
-			+ endS_str+"\r\n"+endE_str;*/
-
-		
-		/*cmccTaskDetail = str_time +"\r\n" + "task ID is: " + taskID_str +"\r\n"
-			+"pioneer-lx reaches to: \r\n" + task_Goal +"\r\n" 
-			+ "sending POST request to server..." +"\r\n"
-			+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
-			+ statusS_str+"\r\n"+statusE_str +"\r\n"
-			+ testS_str+"\r\n"+testE_str +"\r\n"
-			+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
-			+ endS_str+"\r\n"+endE_str +"\r\n"
-			+ taskDone +"\r\n";*/
-
-
-		/*TaskNo = TaskNo + 1; // line + 1
-		flag = 31; // get the next line of GOAL, then repeat tasks
-
-			if(TaskNo == nLineCount && TaskNo!=0 && nLineCount!=0)
-			{
-				TaskNo=0;
-				flag = 5;
-				taskDone="Complete all tasks!";
-			}*/
-
-		goto outTask;
 		}
-	outTask:
-
-		/*if(taskSUS_flag == 1) // if POST success, and get "200" feedback, plot the GREEN sign on the map 
-		{
-		redPath=0;
-		greenPath=245;
-		bluePath=0;
-		taskSUS_flag = 0;
-		}
-
-		if(taskSUS_flag == 2) // if POST faild, and get "500" feedback, plot the RED sign on the map 
-		{
-		redPath=245;
-		greenPath=0;
-		bluePath=0;
-		taskSUS_flag = 0;
-		}
-
-		if(taskSUS_flag == 0) // if ERROR, and get "0" feedback, plot the YELLOW sign on the map 
-		{
-		redPath=0;
-		greenPath=245;
-		bluePath=245;
-		taskSUS_flag = 0;
-		}*/
-
-
 		Sleep(1000);
 	}
 }
@@ -1707,46 +1566,31 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 		flag_flag = 0;
 		}
 		
-		if(taskSUS_flag == 1 || taskSUS_flag == 2 || taskSUS_flag == 3)
+		//------------- task goals record -------------//
+		if(taskSUS_flag == 1) // status 200
 		{
-			//m_log.SetWindowText(cmccTaskStatue);
-			//--- record the data in text file ---//
-			//using namespace std;
-			std::ofstream write_task;
+			taskGoal_green[0][taskGoal_countG] = tempX;
+			taskGoal_green[1][taskGoal_countG] = tempY;
 
-			write_task.open("CMCC_TASK.txt",std::ios::app);
-			write_task<<cmccTaskDetail;
-			write_task<<std::endl;
-			write_task.close(); 
-
-				//------------- task goals record -------------//
-				if(taskSUS_flag == 1) // status 200
-				{
-					taskGoal_green[0][taskGoal_countG] = tempX;
-					taskGoal_green[1][taskGoal_countG] = tempY;
-
-					taskGoal_countG = taskGoal_countG + 1;
-				}
-
-				if(taskSUS_flag == 2) // status 500
-				{
-					taskGoal_yellow[0][taskGoal_countY] = tempX;
-					taskGoal_yellow[1][taskGoal_countY] = tempY;
-
-					taskGoal_countY = taskGoal_countY + 1;
-				}
-
-				if(taskSUS_flag == 3) // status error
-				{
-					taskGoal_red[0][taskGoal_countR] = tempX;
-					taskGoal_red[1][taskGoal_countR] = tempY;
-
-					taskGoal_countR = taskGoal_countR + 1;
-				}
-
-			taskSUS_flag = 0;
+			taskGoal_countG = taskGoal_countG + 1;
 		}
-		//--------------//
+
+		if(taskSUS_flag == 2) // status 500
+		{
+			taskGoal_yellow[0][taskGoal_countY] = tempX;
+			taskGoal_yellow[1][taskGoal_countY] = tempY;
+
+			taskGoal_countY = taskGoal_countY + 1;
+		}
+
+		if(taskSUS_flag == 3) // status error
+		{
+			taskGoal_red[0][taskGoal_countR] = tempX;
+			taskGoal_red[1][taskGoal_countR] = tempY;
+
+			taskGoal_countR = taskGoal_countR + 1;
+		}
+		//-------------------------------------//
 
 
 		if(flag_flag==10 || flag_flag==20 || flag_flag==30 || flag_flag==40 || flag_flag==50 ||
@@ -1769,12 +1613,10 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			if(flag_flag==50)e="end test DONE!";
 			if(flag_flag==51)e="end FAILD!";
 
-			//if(flag_flag==60)e="task cycle DONE!";
+			if(taskDone_flag == 1)e="tasks COMPLETE!";
 
 		cmccTaskStatue= "Perform tasks now... \r\n"+a+"\r\n"+b+"\r\n"+c+"\r\n"+d+"\r\n"+e+"\r\n";
 		m_log.SetWindowText(cmccTaskStatue);
-		
-		//flag_flag = 0;
 		}
 
 		if(flag_flag==0 && id_flag==1)
@@ -1784,12 +1626,10 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			c="";
 			d="";
 			e="";
+
 			cmccTaskStatue= "Perform tasks now... \r\n"+a+"\r\n"+b+"\r\n"+c+"\r\n"+d+"\r\n"+e+"\r\n";
 			m_log.SetWindowText(cmccTaskStatue);
 		}
-
-
-
 
 
 		//--- random number ---//
@@ -1829,18 +1669,29 @@ void MapDlg::OnTimer(UINT_PTR nIDEvent)
 			tm_sys=CTime::GetCurrentTime();   
 			str_time=tm_sys.Format("%Y_%m_%d_%X");
 			cmccTaskDetail = str_time +"\r\n" + "task ID is: " + taskID_str +"\r\n"
-							+"pioneer-lx reaches to: \r\n" + task_Goal +"\r\n" 
+							+ "pioneer-lx reaches to: \r\n" + task_Goal +"\r\n" 
 							+ "sending POST request to server..." +"\r\n"
 							+ loginS_str+"\r\n"+loginE_str+"\r\n" + login_ERROR+"\r\n"
 							+ statusS_str+"\r\n"+statusE_str +"\r\n"
 							+ testS_str+"\r\n"+testE_str +"\r\n"
 							+ heartBeatS_str+"\r\n"+heartBeatE_str +"\r\n" 
-							+ endS_str+"\r\n"+endE_str +"\r\n"
-							+ taskDone +"\r\n";
+							+ endS_str+"\r\n"+endE_str +"\r\n" + taskDone;
 
 			m_taskLog.SetWindowText(cmccTaskDetail);
+
+			//--------- record test results --------//
+			std::ofstream write_task;
+
+			write_task.open("CMCC_TASK.txt",std::ios::app);
+			write_task<<cmccTaskDetail;
+			write_task<<std::endl;
+			write_task.close(); 
+			//--------- ------------------ --------//
+
 			taskSUS_flag = 0;
+			//taskDone_flag = 0;
 		}
+
 
 	CDialogEx::OnTimer(nIDEvent);
 }
@@ -2612,6 +2463,8 @@ void CChinaMobileDlg::OnBnClickedButton23()
 	CString g_info;
 	g_info="GOAL LIST: \r\n" + Goal_list + " __ END";
 	m_log.SetWindowText(g_info);
+
+	flag_flag = 99;
 }
 
 
@@ -2671,6 +2524,12 @@ void CChinaMobileDlg::OnBnClickedButton16()
 {
 	flag=31; // CMCC task starts
 	id_flag=1;
+	taskDone_flag=0;
+
+	memset(taskGoal_green, 0, sizeof(taskGoal_green));
+	memset(taskGoal_yellow, 0, sizeof(taskGoal_yellow));
+	memset(taskGoal_red, 0, sizeof(taskGoal_red));
+
 	AfxBeginThread(AuxThread, this);
 
 	//--- following program can capture each line's text in Edit Ccontrol ---//

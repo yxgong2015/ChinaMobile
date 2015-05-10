@@ -1,48 +1,153 @@
-2015_04_23_16:49:41
-Arriving to: 
-2
-sending POST to server...
+2015_05_05_00:28:08
+task ID is: 846204
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
 login ...
-login FAILD!
-status 500
-license state 0
-user state 0
+login ERROR!
 
 
 report status ERROR!
 
 testing ERROR!
 
-ending ERROR!
-2015_04_23_16:51:37
-Arriving to: 
-5
-sending POST to server...
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:29:21
+task ID is: 846204
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
 login ...
-login FAILD!
-status 500
-license state 0
-user state 0
+login ERROR!
 
 
 report status ERROR!
 
 testing ERROR!
 
-ending ERROR!
-2015_04_23_17:03:35
-Arriving to: 
-1
-sending POST to server...
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:31:05
+task ID is: 846204
+pioneer-lx reaches to: 
+Side door
+sending POST request to server...
 login ...
-login FAILD!
-status 500
-license state 0
-user state 0
+login ERROR!
 
 
 report status ERROR!
 
 testing ERROR!
 
-ending ERROR!
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:32:40
+task ID is: 846204
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:33:52
+task ID is: 846204
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:35:32
+task ID is: 846204
+pioneer-lx reaches to: 
+Side door
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:37:06
+task ID is: 846204
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:38:21
+task ID is: 846204
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:40:00
+task ID is: 846204
+pioneer-lx reaches to: 
+Side door
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+

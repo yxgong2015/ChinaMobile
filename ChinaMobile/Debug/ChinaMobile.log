@@ -1,4 +1,4 @@
-﻿生成启动时间为 2015/4/24 0:32:15。
+﻿生成启动时间为 2015/5/7 16:08:24。
      1>项目“N:\VS_TESTING\TEMP\ChinaMobile\ChinaMobile\ChinaMobile.vcxproj”在节点 2 上(build 个目标)。
      1>InitializeBuildStatus:
          正在创建“Debug\ChinaMobile.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
@@ -6,7 +6,13 @@
          所有输出均为最新。
          c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D _MBCS /D _AFXDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Debug\ChinaMobile.pch" /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ChinaMobileDlg.cpp
          ChinaMobileDlg.cpp
-     1>n:\vs_testing\temp\chinamobile\chinamobile\chinamobiledlg.cpp(1107): warning C4715: 'CChinaMobileDlg::MainThread' : not all control paths return a value
+     1>n:\vs_testing\temp\chinamobile\chinamobile\chinamobiledlg.cpp(33): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>n:\vs_testing\temp\chinamobile\chinamobile\chinamobiledlg.cpp(1208): warning C4101: 'data_heartBeat' : unreferenced local variable
+     1>n:\vs_testing\temp\chinamobile\chinamobile\chinamobiledlg.cpp(1208): warning C4101: 'data_startTest' : unreferenced local variable
+     1>n:\vs_testing\temp\chinamobile\chinamobile\chinamobiledlg.cpp(1208): warning C4101: 'data_logIn' : unreferenced local variable
+     1>n:\vs_testing\temp\chinamobile\chinamobile\chinamobiledlg.cpp(1208): warning C4101: 'data_endTest' : unreferenced local variable
+     1>n:\vs_testing\temp\chinamobile\chinamobile\chinamobiledlg.cpp(1208): warning C4101: 'data_testStatus' : unreferenced local variable
+     1>n:\vs_testing\temp\chinamobile\chinamobile\chinamobiledlg.cpp(1198): warning C4715: 'CChinaMobileDlg::MainThread' : not all control paths return a value
          所有输出均为最新。
          所有输出均为最新。
        ResourceCompile:
@@ -45,4 +51,4 @@
 
 生成成功。
 
-已用时间 00:00:06.21
+已用时间 00:00:06.22

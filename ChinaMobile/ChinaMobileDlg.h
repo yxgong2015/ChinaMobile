@@ -31,6 +31,7 @@ public:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
 	static UINT MainThread(LPVOID lParam);//线程函数
+	static UINT AuxThread(LPVOID lParam);//线程函数
 	bool    Thread_Running_control;//线程相关
 	bool    IsThreadRunning;//线程相关
 
@@ -48,6 +49,8 @@ public:
 	CIPAddressCtrl m_IP;
 	CEdit m_log;
 	CEdit m_goal;
+	CEdit m_pTh;
+	CButton m_grid;
 	CButton m_safeDrive;
 	CEdit m_scanMapName;
 	CStatic m_serverMap;
@@ -97,25 +100,27 @@ public:
 	afx_msg void OnEnChangeEdit15();
 	void CChinaMobileDlg::drawServerMap(CDC *pDC, CRect &rectPicture);
 	void CChinaMobileDlg::drawLaserCurrent(CDC *pDC, CRect &rectPicture);
+	//void CChinaMobileDlg::taskGoals(CDC *pDC, CRect &rectPicture);
 	void CChinaMobileDlg::OnLButtonDblClk();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 
 	//--------------------- CMCC tasks -------------------//
-	int conLoginCloudReqBody(std::string &reqbody); // login & register
+
+	int conLoginCloudReqBody(std::string &reqbody);    // 1. login & register
 	int parseLoginCloudRespBody(char* respbody);
 
-	int conStartTestReqBody(std::string &reqbody);  // start device testing
+	int conRepTestStatusReqBody(std::string &reqbody); // 2. updata device statue
+	int parseRepTestStatusRespBody(char* respbody);
+		
+	int conStartTestReqBody(std::string &reqbody);     // 3. start device testing
 	int parseStartTestRespBody(char* respbody);
 
-	int conRepTestStatusReqBody(std::string &reqbody);  // updata device statue
-	int parseRepTestStatusRespBody(char* respbody);
+	int conHeartBeatReqBody(std::string& reqbody);     // 4. heart beat test
+	int parseHeartBeatRespBody(char* respbody);        // (char* respbody,std::string& state);
 
-	int conLogoutCloudReqBody(std::string& reqbody);   // end test
+	int conLogoutCloudReqBody(std::string& reqbody);   // 5. end test
 	int parseLogoutCloudRespBody(char* respbody);
 
 private:
 	char taskID[20];
-public:
-	CEdit m_pTh;
-	CButton m_grid;
 };

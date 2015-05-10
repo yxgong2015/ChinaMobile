@@ -1,5 +1,5 @@
 /* -------------------------------------------------------- *
- * Last modification date 2015/05/04 15:11  by: Xiaoxi Gong *
+ * Last modification date 2015/05/07 12:49  by: Xiaoxi Gong *
  * -------------------------------------------------------- *
 */
 #include "stdafx.h"
@@ -1401,7 +1401,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 						heartBeatE_str="heartBeat test READY";
 
 						Sleep(1000);
-						if(heartBeat_count == 30)goto heartBeat_out;
+						if(heartBeat_count == 3)goto heartBeat_out;
 						goto heartBeat_testAgain;
 					}
 
@@ -1412,7 +1412,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 						heartBeatE_str="heartBeat test RUNNING";
 
 						Sleep(1000);
-						if(heartBeat_count == 30)goto heartBeat_out;
+						if(heartBeat_count == 3)goto heartBeat_out;
 						goto heartBeat_testAgain;
 					}
 
@@ -1423,7 +1423,7 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 						heartBeatE_str="heartBeat test WAIT";
 
 						Sleep(1000);
-						if(heartBeat_count == 30)goto heartBeat_out;
+						if(heartBeat_count == 3)goto heartBeat_out;
 						goto heartBeat_testAgain;
 					}
 
@@ -1451,11 +1451,11 @@ UINT CChinaMobileDlg::AuxThread(LPVOID lParam)
 								heartBeat_state = "";
 								goto heartBeat_out;
 							}
-
-						end_flag = 0;
-						heartBeat_state = "";
-						heartBeatE_str="heartBeat state ERROR";
 						}
+
+					end_flag = 0;
+					heartBeat_state = "";
+					heartBeatE_str="heartBeat state ERROR";
 					}
 				}
 				heartBeat_out:
@@ -1573,6 +1573,7 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			taskGoal_green[1][taskGoal_countG] = tempY;
 
 			taskGoal_countG = taskGoal_countG + 1;
+			taskSUS_flag = 4;
 		}
 
 		if(taskSUS_flag == 2) // status 500
@@ -1581,6 +1582,7 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			taskGoal_yellow[1][taskGoal_countY] = tempY;
 
 			taskGoal_countY = taskGoal_countY + 1;
+			taskSUS_flag = 4;
 		}
 
 		if(taskSUS_flag == 3) // status error
@@ -1589,6 +1591,7 @@ void CChinaMobileDlg::OnTimer(UINT_PTR nIDEvent)
 			taskGoal_red[1][taskGoal_countR] = tempY;
 
 			taskGoal_countR = taskGoal_countR + 1;
+			taskSUS_flag = 4;
 		}
 		//-------------------------------------//
 
@@ -1664,7 +1667,7 @@ void MapDlg::OnTimer(UINT_PTR nIDEvent)
 					break;
 		}
 
-		if(taskSUS_flag == 1 || taskSUS_flag == 2 || taskSUS_flag == 3)
+		if(taskSUS_flag == 4)
 		{
 			tm_sys=CTime::GetCurrentTime();   
 			str_time=tm_sys.Format("%Y_%m_%d_%X");
@@ -2356,6 +2359,10 @@ void CChinaMobileDlg::OnBnClickedButton7()
 	flag=5; // stop
 	id_flag=0;
 	TaskNo = 0;
+
+	taskGoal_countG=0;
+	taskGoal_countY=0;
+	taskGoal_countR=0;
 }
 
 
@@ -2529,6 +2536,10 @@ void CChinaMobileDlg::OnBnClickedButton16()
 	memset(taskGoal_green, 0, sizeof(taskGoal_green));
 	memset(taskGoal_yellow, 0, sizeof(taskGoal_yellow));
 	memset(taskGoal_red, 0, sizeof(taskGoal_red));
+
+	taskGoal_countG=0;
+	taskGoal_countY=0;
+	taskGoal_countR=0;
 
 	AfxBeginThread(AuxThread, this);
 

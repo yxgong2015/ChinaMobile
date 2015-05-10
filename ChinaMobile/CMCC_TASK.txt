@@ -1,240 +1,527 @@
-2015_04_23_17:05:35
-Arriving to: 
-1
-sending POST to server...
+2015_05_04_14:49:15
+task ID is: 106640
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
 login ...
-login FAILD!
-status 500
-license state 0
-user state 0
+login ERROR!
 
 
 report status ERROR!
 
 testing ERROR!
 
-ending ERROR!
-2015_04_23_17:31:27
-Arriving to: 
-1
-sending POST to server...
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_14:50:29
+task ID is: 106640
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
 login ...
-login FAILD!
-status 200
-license state error
-user state error
+login ERROR!
 
 
 report status ERROR!
 
 testing ERROR!
 
-ending ERROR!
-2015_04_23_18:01:06
-Arriving to: 
-1
-sending POST to server...
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_14:51:52
+task ID is: 106640
+pioneer-lx reaches to: 
+Workshop
+sending POST request to server...
 login ...
-login FAILD!
-status 200
-license state 404
-user state 200
+login ERROR!
 
 
 report status ERROR!
 
 testing ERROR!
 
-ending ERROR!
-2015_04_23_18:03:29
-Arriving to: 
-1
-sending POST to server...
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_14:52:42
+task ID is: 106640
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
 login ...
-login FAILD!
-status 200
-license state 404
-user state 200
+login ERROR!
 
 
 report status ERROR!
 
 testing ERROR!
 
-ending ERROR!
-2015_04_23_18:19:35
-Arriving to: 
-1
-sending POST to server...
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_14:54:03
+task ID is: 106640
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
 login ...
-login FAILD!
-status 200
-license state 404
-user state 200
+login ERROR!
 
 
 report status ERROR!
 
 testing ERROR!
 
-ending ERROR!
-2015_04_23_18:28:32
-Arriving to: 
-1
-sending POST to server...
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_14:55:54
+task ID is: 106640
+pioneer-lx reaches to: 
+Workshop
+sending POST request to server...
 login ...
-login FAILD!
-status 200
-license state error
-user state 200
+login ERROR!
 
 
 report status ERROR!
 
 testing ERROR!
 
-ending ERROR!
-2015_04_23_18:32:29
-Arriving to: 
-1
-sending POST to server...
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_15:19:29
+task ID is: 342834
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
 login ...
-login SUCCESS!
-status 200
-license state error
-user state 200
+login ERROR!
 
-report status ...
-report status SUCCESS!
-testing ...
-testing SUCCESS!
-ending ...
-ending SUCCESS!
-2015_04_23_18:34:18
-Arriving to: 
-1
-sending POST to server...
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_15:20:36
+task ID is: 342834
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
 login ...
-login SUCCESS!
-status 200
-license state 100
-user state 200
+login ERROR!
 
-report status ...
-report status SUCCESS!
-testing ...
-testing SUCCESS!
-ending ...
-ending SUCCESS!
-2015_04_23_18:39:09
-Arriving to: 
-1
-sending POST to server...
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_15:21:49
+task ID is: 342834
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
 login ...
-login SUCCESS!
-status 200
-license state 100
-user state 200
+login ERROR!
 
-report status ...
-report status SUCCESS!
-testing ...
-testing SUCCESS!
-ending ...
-ending SUCCESS!
-2015_04_23_18:42:37
-Arriving to: 
-1
-sending POST to server...
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_15:22:58
+task ID is: 342834
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
 login ...
-login SUCCESS!
-status 200
-license state 100
-user state 200
+login ERROR!
 
-report status ...
-report status SUCCESS!
-testing ...
-testing SUCCESS!
-ending ...
-ending SUCCESS!
-2015_04_23_18:50:59
-Arriving to: 
-1
-sending POST to server...
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_15:24:11
+task ID is: 342834
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
 login ...
-login SUCCESS!
-status 200
-license state 100
-user state 200
+login ERROR!
 
-report status ...
-report status SUCCESS!
-testing ...
-testing SUCCESS!
-ending ...
-ending SUCCESS!
-2015_04_23_18:59:58
-Arriving to: 
-1
-sending POST to server...
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_04_15:25:20
+task ID is: 342834
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
 login ...
-login SUCCESS!
-status 200
-license state 100
-user state 200
+login ERROR!
 
-report status ...
-report status SUCCESS!
-testing ...
-testing SUCCESS!
-ending ...
-ending SUCCESS!
-2015_04_23_19:07:04
-Arriving to: 
-1
-sending POST to server...
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:01:56
+task ID is: 750595
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
 login ...
-login SUCCESS!
-status 200
-license state 100
-user state 200
+login ERROR!
 
-report status ...
-report status SUCCESS!
-testing ...
-testing FAILD!
 
-ending ERROR!
-2015_04_23_19:09:08
-Arriving to: 
-1
-sending POST to server...
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:03:12
+task ID is: 750595
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
 login ...
-login SUCCESS!
-status 200
-license state 100
-user state 200
+login ERROR!
 
-report status ...
-report status SUCCESS!
-testing ...
-testing FAILD!
 
-ending ERROR!
-2015_04_23_19:27:44
-Arriving to: 
-1
-sending POST to server...
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:05:23
+task ID is: 750595
+pioneer-lx reaches to: 
+Hallway 2
+sending POST request to server...
 login ...
-login SUCCESS!
-status 200
-license state 100
-user state 200
+login ERROR!
 
-report status ...
-report status SUCCESS!
-testing ...
-testing SUCCESS!
-ending ...
-ending SUCCESS!
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:06:50
+task ID is: 293886
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:08:00
+task ID is: 293886
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:10:18
+task ID is: 293886
+pioneer-lx reaches to: 
+Hallway 2
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:11:38
+task ID is: 293886
+pioneer-lx reaches to: 
+Workshop
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:12:31
+task ID is: 293886
+pioneer-lx reaches to: 
+Side door
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:14:03
+task ID is: 293886
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:15:15
+task ID is: 293886
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:17:26
+task ID is: 293886
+pioneer-lx reaches to: 
+Hallway 2
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:19:08
+task ID is: 293886
+pioneer-lx reaches to: 
+Workshop
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_05_00:19:52
+task ID is: 293886
+pioneer-lx reaches to: 
+Side door
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_07_13:21:44
+task ID is: 203064
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_07_13:33:14
+task ID is: 203064
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_07_13:34:34
+task ID is: 203064
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_07_13:35:54
+task ID is: 203064
+pioneer-lx reaches to: 
+Workshop
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_07_16:09:39
+task ID is: 153245
+pioneer-lx reaches to: 
+dock
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+
+2015_05_07_16:10:43
+task ID is: 153245
+pioneer-lx reaches to: 
+Hallway 1
+sending POST request to server...
+login ...
+login ERROR!
+
+
+report status ERROR!
+
+testing ERROR!
+
+heartBeat test ERROR
+
+ending ERROR!
+

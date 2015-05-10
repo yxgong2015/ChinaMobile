@@ -19,9 +19,13 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV Ö§³Ö
 	void MapDlg::newMap(CDC *pDC, CRect &rectPicture);
 	void MapDlg::newMapBot(CDC *pDC, CRect &rectPicture);
+	void MapDlg::taskGoals(CDC *pDC, CRect &rectPicture);
 	DECLARE_MESSAGE_MAP()
 public:
 	CStatic m_newMapDisplay;
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+//	CString m_taskLog;
+	CEdit m_taskLog;
+	afx_msg void OnBnClickedButton1();
 };
